@@ -110,3 +110,10 @@
 
 - [x] Gerar automaticamente relatório do dia atual ao acessar página
 - [x] Mostrar detalhamento completo do dia atual
+
+
+## Detalhamento por Método de Pagamento
+
+- [x] Adicionar campo paymentMethod no schema de tickets
+- [x] Atualizar API de criação de ticket para incluir método de pagamento
+- [x] Adicionar resumo por método de pagamento no relatório (dinheiro, cartão, PIX)

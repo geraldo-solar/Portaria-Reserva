@@ -57,6 +57,7 @@ export const appRouter = router({
           customerEmail: z.string().email().optional(),
           customerPhone: z.string().optional(),
           ticketTypeId: z.number().int().positive(),
+          paymentMethod: z.enum(["dinheiro", "pix", "cartao"]),
         })
       )
       .mutation(async ({ input }) => {
@@ -81,6 +82,7 @@ export const appRouter = router({
           customerId,
           ticketTypeId: input.ticketTypeId,
           price: ticketType.price,
+          paymentMethod: input.paymentMethod,
           qrCode,
           status: "active",
         });

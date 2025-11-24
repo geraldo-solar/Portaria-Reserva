@@ -69,6 +69,7 @@ describe("Tickets API", () => {
         customerEmail: "john@example.com",
         customerPhone: "(11) 99999-9999",
         ticketTypeId: 1,
+        paymentMethod: "dinheiro",
       });
 
       expect(result).toBeDefined();
@@ -84,6 +85,7 @@ describe("Tickets API", () => {
         await caller.tickets.create({
           customerName: "",
           ticketTypeId: 1,
+          paymentMethod: "dinheiro",
         });
         expect.fail("Should have thrown an error");
       } catch (error: any) {
@@ -96,6 +98,7 @@ describe("Tickets API", () => {
         await caller.tickets.create({
           customerName: "John Doe",
           ticketTypeId: 99999,
+          paymentMethod: "dinheiro",
         });
         expect.fail("Should have thrown an error");
       } catch (error: any) {
@@ -115,6 +118,7 @@ describe("Tickets API", () => {
       const created = await caller.tickets.create({
         customerName: "Jane Doe",
         ticketTypeId: 1,
+        paymentMethod: "pix",
       });
 
       // Buscar o ingresso criado
@@ -131,6 +135,7 @@ describe("Tickets API", () => {
       const created = await caller.tickets.create({
         customerName: "Bob Smith",
         ticketTypeId: 1,
+        paymentMethod: "cartao",
       });
 
       // Cancelar o ingresso
@@ -152,6 +157,7 @@ describe("Tickets API", () => {
       const created = await caller.tickets.create({
         customerName: "Alice Johnson",
         ticketTypeId: 1,
+        paymentMethod: "dinheiro",
       });
 
       // Cancelar uma vez

@@ -163,6 +163,56 @@ export default function Reports() {
               </Card>
             </div>
 
+            {/* Resumo por Método de Pagamento */}
+            <Card className="mb-8 bg-gradient-to-br from-emerald-50 to-emerald-100 border-emerald-200">
+              <CardHeader>
+                <CardTitle className="text-emerald-900">Resumo por Método de Pagamento</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="bg-white p-4 rounded-lg shadow-sm">
+                    <p className="text-sm text-gray-600 mb-1">💵 Dinheiro</p>
+                    <p className="text-2xl font-bold text-emerald-700">
+                      R$ {(
+                        salesQuery.data
+                          ?.filter((t) => t.paymentMethod === "dinheiro" && t.status === "active")
+                          .reduce((sum, t) => sum + t.price, 0) || 0
+                      ).toFixed(2)}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {salesQuery.data?.filter((t) => t.paymentMethod === "dinheiro" && t.status === "active").length || 0} vendas
+                    </p>
+                  </div>
+                  <div className="bg-white p-4 rounded-lg shadow-sm">
+                    <p className="text-sm text-gray-600 mb-1">📱 PIX</p>
+                    <p className="text-2xl font-bold text-emerald-700">
+                      R$ {(
+                        salesQuery.data
+                          ?.filter((t) => t.paymentMethod === "pix" && t.status === "active")
+                          .reduce((sum, t) => sum + t.price, 0) || 0
+                      ).toFixed(2)}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {salesQuery.data?.filter((t) => t.paymentMethod === "pix" && t.status === "active").length || 0} vendas
+                    </p>
+                  </div>
+                  <div className="bg-white p-4 rounded-lg shadow-sm">
+                    <p className="text-sm text-gray-600 mb-1">💳 Cartão</p>
+                    <p className="text-2xl font-bold text-emerald-700">
+                      R$ {(
+                        salesQuery.data
+                          ?.filter((t) => t.paymentMethod === "cartao" && t.status === "active")
+                          .reduce((sum, t) => sum + t.price, 0) || 0
+                      ).toFixed(2)}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {salesQuery.data?.filter((t) => t.paymentMethod === "cartao" && t.status === "active").length || 0} vendas
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Detalhes */}
             <Card>
               <CardHeader className="flex items-center justify-between">

@@ -10,13 +10,13 @@ import { trpc } from "@/lib/trpc";
 interface SaleItem {
   id: string;
   ticketTypeId: string;
-  paymentMethod: string;
+  paymentMethod: "dinheiro" | "pix" | "cartao";
 }
 
 export default function SellTicket() {
   const [, setLocation] = useLocation();
   const [saleItems, setSaleItems] = useState<SaleItem[]>([
-    { id: "1", ticketTypeId: "", paymentMethod: "" },
+    { id: "1", ticketTypeId: "", paymentMethod: "dinheiro" },
   ]);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
@@ -28,7 +28,7 @@ export default function SellTicket() {
   const handleAddItem = () => {
     setSaleItems([
       ...saleItems,
-      { id: Date.now().toString(), ticketTypeId: "", paymentMethod: "" },
+      { id: Date.now().toString(), ticketTypeId: "", paymentMethod: "dinheiro" },
     ]);
   };
 
@@ -200,6 +200,7 @@ export default function SellTicket() {
         const ticket = await createTicketMutation.mutateAsync({
           customerName: `Cliente ${Date.now()}`,
           ticketTypeId: parseInt(item.ticketTypeId),
+          paymentMethod: item.paymentMethod,
         });
 
         // Imprimir automaticamente
@@ -212,7 +213,7 @@ export default function SellTicket() {
 
       setSuccessMessage(`${successCount} ingresso(s) vendido(s) com sucesso!`);
       setSuccess(true);
-      setSaleItems([{ id: "1", ticketTypeId: "", paymentMethod: "" }]);
+      setSaleItems([{ id: "1", ticketTypeId: "", paymentMethod: "dinheiro" }]);
 
       // Limpar mensagem de sucesso após 3 segundos
       setTimeout(() => setSuccess(false), 3000);
