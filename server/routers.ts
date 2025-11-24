@@ -2,9 +2,24 @@ import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
+import { z } from "zod";
+import {
+  createCustomer,
+  listTicketTypes,
+  createTicket,
+  getTicketById,
+  getTicketByQRCode,
+  listTickets,
+  cancelTicket,
+  markTicketAsPrinted,
+  markTicketAsUsed,
+  logAuditAction,
+  getSalesReport,
+  getSalesStats,
+} from "./db";
+import { v4 as uuidv4 } from "uuid";
 
 export const appRouter = router({
-    // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
   system: systemRouter,
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
@@ -17,12 +32,200 @@ export const appRouter = router({
     }),
   }),
 
-  // TODO: add feature routers here, e.g.
-  // todo: router({
-  //   list: protectedProcedure.query(({ ctx }) =>
-  //     db.getUserTodos(ctx.user.id)
-  //   ),
-  // }),
+  tickets: router({
+    list: publicProcedure
+      .input(
+        z.object({
+          status: z.enum(["active", "cancelled", "used"]).optional(),
+        }).optional()
+      )
+      .query(async ({ input }) => {
+        const allTickets = await listTickets({ status: input?.status });
+        return allTickets.map((ticket) => ({
+          ...ticket,
+          price: ticket.price / 100,
+        }));
+      }),
+
+    create: publicProcedure
+      .input(
+        z.object({
+          customerName: z.string().min(1),
+          customerEmail: z.string().email().optional(),
+          customerPhone: z.string().optional(),
+          ticketTypeId: z.number().int().positive(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const customerResult = await createCustomer({
+          name: input.customerName,
+          email: input.customerEmail || null,
+          phone: input.customerPhone || null,
+        });
+
+        const customerId = (customerResult[0]?.insertId as number) || 1;
+
+        const ticketTypes = await listTicketTypes();
+        const ticketType = ticketTypes.find((t) => t.id === input.ticketTypeId);
+
+        if (!ticketType) {
+          throw new Error("Ticket type not found");
+        }
+
+        const qrCode = uuidv4();
+
+        const ticketResult = await createTicket({
+          customerId,
+          ticketTypeId: input.ticketTypeId,
+          price: ticketType.price,
+          qrCode,
+          status: "active",
+        });
+
+        const ticketId = (ticketResult[0]?.insertId as number) || 1;
+
+        await logAuditAction("create", "ticket", ticketId, undefined, {
+          customerName: input.customerName,
+          ticketType: ticketType.name,
+          price: ticketType.price / 100,
+        });
+
+        return {
+          id: ticketId,
+          customerId,
+          ticketTypeId: input.ticketTypeId,
+          price: ticketType.price / 100,
+          qrCode,
+          status: "active",
+          createdAt: new Date(),
+        };
+      }),
+
+    getById: publicProcedure
+      .input(z.number().int().positive())
+      .query(async ({ input }) => {
+        const ticket = await getTicketById(input);
+        if (!ticket) return null;
+        return {
+          ...ticket,
+          price: ticket.price / 100,
+        };
+      }),
+
+    getByQRCode: publicProcedure
+      .input(z.string())
+      .query(async ({ input }) => {
+        const ticket = await getTicketByQRCode(input);
+        if (!ticket) return null;
+        return {
+          ...ticket,
+          price: ticket.price / 100,
+        };
+      }),
+
+    cancel: publicProcedure
+      .input(
+        z.object({
+          ticketId: z.number().int().positive(),
+          reason: z.string().min(1),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const ticket = await getTicketById(input.ticketId);
+        if (!ticket) {
+          throw new Error("Ticket not found");
+        }
+
+        if (ticket.status !== "active") {
+          throw new Error("Only active tickets can be cancelled");
+        }
+
+        await cancelTicket(input.ticketId, input.reason);
+
+        await logAuditAction("cancel", "ticket", input.ticketId, undefined, {
+          reason: input.reason,
+          previousStatus: ticket.status,
+        });
+
+        return { success: true };
+      }),
+
+    markPrinted: publicProcedure
+      .input(z.number().int().positive())
+      .mutation(async ({ input }) => {
+        const ticket = await getTicketById(input);
+        if (!ticket) {
+          throw new Error("Ticket not found");
+        }
+
+        await markTicketAsPrinted(input);
+
+        await logAuditAction("print", "ticket", input, undefined, {
+          qrCode: ticket.qrCode,
+        });
+
+        return { success: true };
+      }),
+
+    markUsed: publicProcedure
+      .input(z.number().int().positive())
+      .mutation(async ({ input }) => {
+        const ticket = await getTicketById(input);
+        if (!ticket) {
+          throw new Error("Ticket not found");
+        }
+
+        await markTicketAsUsed(input);
+
+        await logAuditAction("use", "ticket", input, undefined, {
+          qrCode: ticket.qrCode,
+        });
+
+        return { success: true };
+      }),
+  }),
+
+  ticketTypes: router({
+    list: publicProcedure.query(async () => {
+      const types = await listTicketTypes();
+      return types.map((t) => ({
+        ...t,
+        price: t.price / 100,
+      }));
+    }),
+  }),
+
+  reports: router({
+    sales: publicProcedure
+      .input(
+        z.object({
+          startDate: z.date(),
+          endDate: z.date(),
+        })
+      )
+      .query(async ({ input }) => {
+        const report = await getSalesReport(input.startDate, input.endDate);
+        return report.map((ticket) => ({
+          ...ticket,
+          price: ticket.price / 100,
+        }));
+      }),
+
+    stats: publicProcedure
+      .input(
+        z.object({
+          startDate: z.date().optional(),
+          endDate: z.date().optional(),
+        }).optional()
+      )
+      .query(async ({ input }) => {
+        const stats = await getSalesStats(input?.startDate, input?.endDate);
+        return {
+          ...stats,
+          totalRevenue: stats.totalRevenue / 100,
+        };
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

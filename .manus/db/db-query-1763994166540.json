@@ -1,0 +1,9 @@
+{
+  "query": "INSERT INTO ticketTypes (name, description, price, createdAt) VALUES \n('Inteira', 'Ingresso inteira', 10000, NOW()),\n('Meia-entrada', 'Meia-entrada (estudante/idoso)', 5000, NOW()),\n('Cortesia', 'Ingresso cortesia', 0, NOW());",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3n1YGayndjafiFC.root --database WT6LGvFNLtRJMrhLS8Vdbi --execute INSERT INTO ticketTypes (name, description, price, createdAt) VALUES \n('Inteira', 'Ingresso inteira', 10000, NOW()),\n('Meia-entrada', 'Meia-entrada (estudante/idoso)', 5000, NOW()),\n('Cortesia', 'Ingresso cortesia', 0, NOW());",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 378
+}
