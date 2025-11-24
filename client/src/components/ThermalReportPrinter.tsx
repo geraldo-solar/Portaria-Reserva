@@ -163,13 +163,25 @@ export default function ThermalReportPrinter({ open, onClose, reportData }: Ther
       {/* Estilos de impressão */}
       <style>{`
         @media print {
+          @page {
+            size: 58mm auto;
+            margin: 0;
+          }
+          
+          body {
+            margin: 0;
+            padding: 0;
+          }
+          
           body * {
             visibility: hidden;
           }
+          
           #thermal-report-content,
           #thermal-report-content * {
             visibility: visible;
           }
+          
           #thermal-report-content {
             position: absolute;
             left: 0;
@@ -177,6 +189,7 @@ export default function ThermalReportPrinter({ open, onClose, reportData }: Ther
             width: 58mm;
             font-size: 9px;
             padding: 2mm;
+            margin: 0;
           }
         }
       `}</style>

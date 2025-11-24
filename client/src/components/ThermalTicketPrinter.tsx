@@ -39,6 +39,11 @@ export function ThermalTicketPrinter({ open, onClose, ticket }: ThermalTicketPri
           <meta charset="UTF-8">
           <title>Ingresso</title>
           <style>
+            @page {
+              size: 58mm auto;
+              margin: 0;
+            }
+            
             * {
               margin: 0;
               padding: 0;
@@ -48,15 +53,15 @@ export function ThermalTicketPrinter({ open, onClose, ticket }: ThermalTicketPri
             body {
               font-family: 'Courier New', monospace;
               width: 58mm;
-              padding: 2mm;
+              padding: 0;
+              margin: 0;
               background: white;
             }
             
             .ticket {
               text-align: center;
               border: 2px solid #000;
-              padding: 5mm;
-              min-height: 100mm;
+              padding: 3mm;
               display: flex;
               flex-direction: column;
               justify-content: space-between;
@@ -64,31 +69,31 @@ export function ThermalTicketPrinter({ open, onClose, ticket }: ThermalTicketPri
             
             .logo {
               text-align: center;
-              margin-bottom: 3mm;
+              margin-bottom: 2mm;
             }
             
             .logo img {
-              max-width: 40mm;
+              max-width: 35mm;
               height: auto;
             }
             
             .header {
-              font-size: 12px;
+              font-size: 11px;
               font-weight: bold;
-              margin-bottom: 3mm;
+              margin-bottom: 2mm;
               text-transform: uppercase;
             }
             
             .title {
-              font-size: 14px;
+              font-size: 12px;
               font-weight: bold;
-              margin: 2mm 0;
+              margin: 1mm 0;
               text-transform: uppercase;
             }
             
             .info {
               font-size: 9px;
-              margin: 1.5mm 0;
+              margin: 1mm 0;
               text-align: center;
               word-wrap: break-word;
             }
@@ -97,28 +102,34 @@ export function ThermalTicketPrinter({ open, onClose, ticket }: ThermalTicketPri
               font-weight: bold;
             }
             
-
             .footer {
-              font-size: 8px;
-              margin-top: 3mm;
+              font-size: 7px;
+              margin-top: 2mm;
               border-top: 1px dashed #000;
-              padding-top: 3mm;
+              padding-top: 2mm;
             }
             
             .ticket-id {
               font-size: 9px;
               font-weight: bold;
-              margin: 2mm 0;
+              margin: 1mm 0;
               word-break: break-all;
             }
             
             @media print {
+              @page {
+                size: 58mm auto;
+                margin: 0;
+              }
+              
               body {
                 margin: 0;
                 padding: 0;
               }
+              
               .ticket {
                 border: none;
+                padding: 2mm;
                 page-break-after: always;
               }
             }

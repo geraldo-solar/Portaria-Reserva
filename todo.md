@@ -184,3 +184,11 @@
 - [x] Remover dependência qrcode.react do package.json
 - [x] Remover verificações de qrCode dos testes unitários
 - [x] Ajustar layouts de impressão para remover espaço do QR code
+
+
+## Otimização de Impressão para Economia de Papel
+
+- [x] Corrigir impressão de relatório que está gerando 6 páginas ao invés de apenas o conteúdo
+- [x] Remover sobra de papel no cabeçalho da impressão de ingresso
+- [x] Ajustar CSS @media print para remover margens desnecessárias
+- [x] Otimizar espaçamentos e paddings para economia máxima de papel
