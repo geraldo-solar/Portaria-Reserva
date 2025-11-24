@@ -69,3 +69,10 @@
 - [x] Criar página de cadastro de produtos (tipos de ingressos)
 - [x] Adicionar botão voltar em todas as páginas
 - [x] Tornar justificativa obrigatória no cancelamento
+
+
+## Ajustes de Design e UX
+
+- [x] Atualizar paleta de cores para verde musgo, palha, areia, amarelo ouro
+- [x] Modificar tela de login com logo branca no background
+- [x] Simplificar venda de ingressos removendo cadastro de cliente
