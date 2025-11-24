@@ -162,3 +162,9 @@
 
 - [x] Ajustar impressão de ingresso para 58mm com logo da empresa
 - [x] Ajustar impressão de relatório para 58mm com logo da empresa
+
+
+## Pré-visualização de Impressão de Ingresso
+
+- [x] Modificar fluxo de venda para exibir pré-visualização antes de imprimir
+- [x] Adicionar modal de confirmação com botões Cancelar e Imprimir

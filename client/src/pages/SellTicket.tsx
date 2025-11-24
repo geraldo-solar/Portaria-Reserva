@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { AlertCircle, CheckCircle, Plus, Trash2, ArrowLeft } from "lucide-react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
+import { ThermalTicketPrinter } from "@/components/ThermalTicketPrinter";
 
 interface SaleItem {
   id: string;
@@ -21,6 +22,9 @@ export default function SellTicket() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  const [ticketsToPrint, setTicketsToPrint] = useState<any[]>([]);
+  const [currentPrintIndex, setCurrentPrintIndex] = useState(0);
+  const [showPrintModal, setShowPrintModal] = useState(false);
 
   const ticketTypesQuery = trpc.ticketTypes.list.useQuery();
   const createTicketMutation = trpc.tickets.create.useMutation();
@@ -195,6 +199,7 @@ export default function SellTicket() {
 
     try {
       let successCount = 0;
+      const tickets: any[] = [];
 
       for (const item of saleItems) {
         const ticket = await createTicketMutation.mutateAsync({
@@ -203,17 +208,18 @@ export default function SellTicket() {
           paymentMethod: item.paymentMethod,
         });
 
-        // Imprimir automaticamente
-        handlePrintTicket(ticket);
+        tickets.push(ticket);
         successCount++;
-
-        // Pequeno delay entre impressões
-        await new Promise((resolve) => setTimeout(resolve, 1500));
       }
 
       setSuccessMessage(`${successCount} ingresso(s) vendido(s) com sucesso!`);
       setSuccess(true);
       setSaleItems([{ id: "1", ticketTypeId: "", paymentMethod: "dinheiro" }]);
+
+      // Iniciar processo de impressão
+      setTicketsToPrint(tickets);
+      setCurrentPrintIndex(0);
+      setShowPrintModal(true);
 
       // Limpar mensagem de sucesso após 3 segundos
       setTimeout(() => setSuccess(false), 3000);
@@ -426,6 +432,34 @@ export default function SellTicket() {
           </div>
         </div>
       </div>
+
+      {/* Modal de impressão */}
+      {showPrintModal && ticketsToPrint.length > 0 && (
+        <ThermalTicketPrinter
+          open={showPrintModal}
+          onClose={() => {
+            // Próximo ticket ou fechar
+            if (currentPrintIndex < ticketsToPrint.length - 1) {
+              setCurrentPrintIndex(currentPrintIndex + 1);
+            } else {
+              setShowPrintModal(false);
+              setTicketsToPrint([]);
+              setCurrentPrintIndex(0);
+            }
+          }}
+          ticket={{
+            id: ticketsToPrint[currentPrintIndex].id,
+            qrCode: ticketsToPrint[currentPrintIndex].qrCode,
+            customerName: ticketsToPrint[currentPrintIndex].customerName,
+            ticketType:
+              ticketTypesQuery.data?.find(
+                (t) => t.id === ticketsToPrint[currentPrintIndex].ticketTypeId
+              )?.name || "Padrão",
+            price: ticketsToPrint[currentPrintIndex].price / 100,
+            createdAt: new Date(ticketsToPrint[currentPrintIndex].createdAt),
+          }}
+        />
+      )}
     </>
   );
 }

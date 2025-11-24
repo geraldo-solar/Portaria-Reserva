@@ -1,7 +1,12 @@
-import { useEffect, useRef } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Printer, X } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
+import { useRef } from "react";
 
 interface ThermalTicketPrinterProps {
+  open: boolean;
+  onClose: () => void;
   ticket: {
     id: number;
     qrCode: string;
@@ -12,27 +17,18 @@ interface ThermalTicketPrinterProps {
   };
 }
 
-export function ThermalTicketPrinter({ ticket }: ThermalTicketPrinterProps) {
+export function ThermalTicketPrinter({ open, onClose, ticket }: ThermalTicketPrinterProps) {
   const qrRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    // Aguardar o QR code ser renderizado
-    const timer = setTimeout(() => {
-      printTicket();
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, [ticket]);
-
-  const printTicket = () => {
+  const handlePrint = () => {
     const printWindow = window.open("", "", "width=400,height=600");
     if (!printWindow) return;
 
     // Obter o QR code como imagem
-    const qrCanvas = document.querySelector("canvas");
+    const qrCanvas = qrRef.current?.querySelector("canvas");
     const qrImage = qrCanvas?.toDataURL("image/png") || "";
 
-    // HTML para papel térmico 80mm
+    // HTML para papel térmico 58mm
     const html = `
       <!DOCTYPE html>
       <html>
@@ -61,6 +57,16 @@ export function ThermalTicketPrinter({ ticket }: ThermalTicketPrinterProps) {
               display: flex;
               flex-direction: column;
               justify-content: space-between;
+            }
+            
+            .logo {
+              text-align: center;
+              margin-bottom: 3mm;
+            }
+            
+            .logo img {
+              max-width: 40mm;
+              height: auto;
             }
             
             .header {
@@ -129,8 +135,8 @@ export function ThermalTicketPrinter({ ticket }: ThermalTicketPrinterProps) {
         <body>
           <div class="ticket">
             <div>
-              <div style="text-align: center; margin-bottom: 3mm;">
-                <img src="/logo-reserva-solar.png" alt="Reserva Solar" style="max-width: 40mm; height: auto;" />
+              <div class="logo">
+                <img src="/logo-reserva-solar.png" alt="Reserva Solar" />
               </div>
               <div class="header">🎫 INGRESSO</div>
               <div class="title">RESERVA SOLAR</div>
@@ -183,12 +189,74 @@ export function ThermalTicketPrinter({ ticket }: ThermalTicketPrinterProps) {
     setTimeout(() => {
       printWindow.print();
       printWindow.close();
+      onClose();
     }, 500);
   };
 
   return (
-    <div ref={qrRef} style={{ display: "none" }}>
-      <QRCodeSVG value={ticket.qrCode} size={256} level="H" includeMargin={true} />
-    </div>
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center justify-between">
+            <span>Pré-visualização de Impressão</span>
+            <Button variant="ghost" size="sm" onClick={onClose}>
+              <X size={16} />
+            </Button>
+          </DialogTitle>
+        </DialogHeader>
+
+        {/* Pré-visualização */}
+        <div className="border rounded-lg p-4 bg-white max-h-[500px] overflow-y-auto">
+          <div className="font-mono text-xs space-y-2 text-center">
+            {/* Logo */}
+            <div className="mb-3">
+              <img src="/logo-reserva-solar.png" alt="Reserva Solar" className="h-16 mx-auto bg-emerald-700 p-2 rounded" />
+            </div>
+
+            {/* Cabeçalho */}
+            <div className="text-center border-b pb-2">
+              <div className="font-bold text-sm">🎫 INGRESSO</div>
+              <div className="font-bold">RESERVA SOLAR</div>
+            </div>
+
+            {/* Informações */}
+            <div className="space-y-1 border-b pb-2">
+              <div><span className="font-bold">ID:</span> #{ticket.id}</div>
+              <div><span className="font-bold">Cliente:</span> {ticket.customerName || "N/A"}</div>
+              <div><span className="font-bold">Tipo:</span> {ticket.ticketType || "Padrão"}</div>
+              <div><span className="font-bold">Preço:</span> R$ {ticket.price.toFixed(2)}</div>
+              <div><span className="font-bold">Data:</span> {new Date(ticket.createdAt).toLocaleDateString("pt-BR")}</div>
+            </div>
+
+            {/* QR Code */}
+            <div ref={qrRef} className="py-3">
+              <QRCodeSVG value={ticket.qrCode} size={128} level="H" includeMargin={true} />
+            </div>
+
+            {/* Código */}
+            <div className="text-[10px] font-bold break-all border-b pb-2">
+              {ticket.qrCode}
+            </div>
+
+            {/* Rodapé */}
+            <div className="text-[10px] pt-2">
+              <div>Válido por 1 dia a partir da emissão</div>
+              <div>Apresente este ingresso na entrada</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Botões */}
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={onClose} className="flex-1">
+            Cancelar
+          </Button>
+          <Button onClick={handlePrint} className="flex-1 bg-emerald-600 hover:bg-emerald-700">
+            <Printer size={16} className="mr-2" />
+            Imprimir
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
