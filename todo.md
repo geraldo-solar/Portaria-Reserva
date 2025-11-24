@@ -156,3 +156,9 @@
 
 - [x] Adicionar coluna "Produto" (nome do tipo de ingresso) na tabela
 - [x] Adicionar coluna "Forma de Pagamento" na tabela
+
+
+## Ajuste de Impressão
+
+- [x] Ajustar impressão de ingresso para 58mm com logo da empresa
+- [x] Ajustar impressão de relatório para 58mm com logo da empresa

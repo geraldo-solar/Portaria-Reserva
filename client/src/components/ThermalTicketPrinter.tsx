@@ -48,8 +48,8 @@ export function ThermalTicketPrinter({ ticket }: ThermalTicketPrinterProps) {
             
             body {
               font-family: 'Courier New', monospace;
-              width: 80mm;
-              padding: 3mm;
+              width: 58mm;
+              padding: 2mm;
               background: white;
             }
             
@@ -94,7 +94,7 @@ export function ThermalTicketPrinter({ ticket }: ThermalTicketPrinterProps) {
             }
             
             .qr-code {
-              max-width: 50mm;
+              max-width: 35mm;
               height: auto;
               display: inline-block;
               border: 1px solid #000;
@@ -129,8 +129,11 @@ export function ThermalTicketPrinter({ ticket }: ThermalTicketPrinterProps) {
         <body>
           <div class="ticket">
             <div>
+              <div style="text-align: center; margin-bottom: 3mm;">
+                <img src="/logo-reserva-solar.png" alt="Reserva Solar" style="max-width: 40mm; height: auto;" />
+              </div>
               <div class="header">🎫 INGRESSO</div>
-              <div class="title">EVENTO</div>
+              <div class="title">RESERVA SOLAR</div>
               
               <div class="info">
                 <span class="info-label">ID:</span> #${ticket.id}

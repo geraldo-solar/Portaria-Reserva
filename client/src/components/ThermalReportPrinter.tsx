@@ -174,8 +174,9 @@ export default function ThermalReportPrinter({ open, onClose, reportData }: Ther
             position: absolute;
             left: 0;
             top: 0;
-            width: 80mm;
-            font-size: 10px;
+            width: 58mm;
+            font-size: 9px;
+            padding: 2mm;
           }
         }
       `}</style>
