@@ -17,6 +17,7 @@ export default function ManageProducts() {
   const [success, setSuccess] = useState(false);
 
   const ticketTypesQuery = trpc.ticketTypes.list.useQuery();
+  const createTicketTypeMutation = trpc.ticketTypes.create.useMutation();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -40,8 +41,12 @@ export default function ManageProducts() {
     }
 
     try {
-      // Aqui você precisaria adicionar uma mutação para criar tipo de ingresso
-      // Por enquanto, apenas mostramos a mensagem de sucesso
+      await createTicketTypeMutation.mutateAsync({
+        name: formData.name,
+        description: formData.description || undefined,
+        price: price,
+      });
+
       setSuccess(true);
       setFormData({
         name: "",
@@ -50,9 +55,10 @@ export default function ManageProducts() {
       });
 
       // Recarregar lista
-      setTimeout(() => {
-        ticketTypesQuery.refetch();
-      }, 1000);
+      ticketTypesQuery.refetch();
+
+      // Limpar mensagem de sucesso após 3 segundos
+      setTimeout(() => setSuccess(false), 3000);
     } catch (err: any) {
       setError(err.message || "Erro ao cadastrar produto");
     }

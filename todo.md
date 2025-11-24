@@ -85,3 +85,10 @@
 - [x] Implementar impressão automática após venda
 - [x] Adicionar seleção de método de pagamento (dinheiro, pix, cartão)
 - [x] Implementar múltiplas vendas com impressão individual
+
+
+## Ajustes Finais
+
+- [x] Remover Dashboard do menu principal
+- [x] Integrar cadastro de produtos com listagem em venda
+- [x] Corrigir background da logomarca para verde musgo

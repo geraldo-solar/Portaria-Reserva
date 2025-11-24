@@ -28,13 +28,7 @@ export default function Home() {
       href: "/cancel",
       color: "from-red-600 to-orange-600",
     },
-    {
-      title: "Dashboard",
-      description: "Visualizar dados em tempo real",
-      icon: BarChart3,
-      href: "/dashboard",
-      color: "from-blue-600 to-cyan-600",
-    },
+
     {
       title: "Relatórios",
       description: "Extratos e resumos de vendas",
@@ -80,7 +74,9 @@ export default function Home() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="mb-8 text-center">
           <div className="flex justify-center mb-6">
-            <img src={APP_LOGO} alt="Logo" className="w-24 h-24 shadow-lg rounded-lg object-contain" />
+            <div className="bg-emerald-700 p-4 rounded-lg shadow-lg">
+              <img src={APP_LOGO} alt="Logo" className="w-24 h-24 object-contain" />
+            </div>
           </div>
           <h2 className="text-3xl font-bold text-emerald-800 mb-2">Bem-vindo ao Sistema</h2>
           <p className="text-emerald-700">Escolha uma opção abaixo para começar</p>
