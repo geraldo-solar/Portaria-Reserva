@@ -140,3 +140,13 @@
 ## Ajuste de Relatório
 
 - [x] Remover coluna QR code da tabela de relatórios
+
+
+## Limpeza de Dados para Testes
+
+- [x] Limpar todos os lançamentos (tickets e customers) do banco de dados
+
+
+## Bug no Relatório
+
+- [x] Corrigir valores por método de pagamento que não correspondem aos lançamentos

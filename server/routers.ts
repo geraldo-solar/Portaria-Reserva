@@ -274,6 +274,20 @@ export const appRouter = router({
         return {
           ...stats,
           totalRevenue: stats.totalRevenue / 100,
+          paymentMethods: {
+            dinheiro: {
+              count: stats.paymentMethods.dinheiro.count,
+              total: stats.paymentMethods.dinheiro.total / 100,
+            },
+            pix: {
+              count: stats.paymentMethods.pix.count,
+              total: stats.paymentMethods.pix.total / 100,
+            },
+            cartao: {
+              count: stats.paymentMethods.cartao.count,
+              total: stats.paymentMethods.cartao.total / 100,
+            },
+          },
         };
       }),
   }),
