@@ -2,6 +2,16 @@ import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { ArrowLeft, Printer, FileText, XCircle } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useState } from "react";
@@ -14,13 +24,28 @@ export default function Reports() {
   const [startDate, setStartDate] = useState(today);
   const [endDate, setEndDate] = useState(today);
   const [printDialogOpen, setPrintDialogOpen] = useState(false);
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [ticketToCancel, setTicketToCancel] = useState<number | null>(null);
 
   const cancelMutation = trpc.tickets.cancel.useMutation({
     onSuccess: () => {
       salesQuery.refetch();
       statsQuery.refetch();
+      setCancelDialogOpen(false);
+      setTicketToCancel(null);
     },
   });
+
+  const handleCancelClick = (ticketId: number) => {
+    setTicketToCancel(ticketId);
+    setCancelDialogOpen(true);
+  };
+
+  const handleConfirmCancel = () => {
+    if (ticketToCancel) {
+      cancelMutation.mutate({ ticketId: ticketToCancel, reason: "Cancelado via relatório" });
+    }
+  };
 
   const salesQuery = trpc.reports.sales.useQuery({
     startDate: new Date(startDate + "T00:00:00"),
@@ -295,11 +320,7 @@ export default function Reports() {
                             <td className="px-4 py-2 text-center">
                               {ticket.status === "active" && (
                                 <Button
-                                  onClick={() => {
-                                    if (window.confirm(`Deseja realmente cancelar o ingresso #${ticket.id}?`)) {
-                                      cancelMutation.mutate({ ticketId: ticket.id, reason: "Cancelado via relatório" });
-                                    }
-                                  }}
+                                  onClick={() => handleCancelClick(ticket.id)}
                                   disabled={cancelMutation.isPending}
                                   variant="ghost"
                                   size="sm"
@@ -339,6 +360,27 @@ export default function Reports() {
           }}
         />
       )}
+
+      {/* Modal de Confirmação de Cancelamento */}
+      <AlertDialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancelar Ingresso</AlertDialogTitle>
+            <AlertDialogDescription>
+              Deseja realmente cancelar o ingresso #{ticketToCancel}? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Voltar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmCancel}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Confirmar Cancelamento
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

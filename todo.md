@@ -241,3 +241,10 @@
 - [x] Adicionar botão de cancelamento em cada linha da tabela de relatórios
 - [x] Implementar confirmação antes de cancelar ingresso
 - [x] Atualizar relatório automaticamente após cancelamento
+
+
+## Bug - Botão de Cancelamento no Relatório
+
+- [x] Investigar por que o botão de cancelar no relatório não está funcionando
+- [x] Corrigir implementação do cancelamento
+- [x] Testar cancelamento via relatório
