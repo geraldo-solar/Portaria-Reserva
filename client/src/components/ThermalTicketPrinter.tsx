@@ -2,7 +2,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Printer, X } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 
 interface ThermalTicketPrinterProps {
   open: boolean;
@@ -19,6 +19,14 @@ interface ThermalTicketPrinterProps {
 
 export function ThermalTicketPrinter({ open, onClose, ticket }: ThermalTicketPrinterProps) {
   const qrRef = useRef<HTMLDivElement>(null);
+  const [printed, setPrinted] = useState(false);
+
+  // Resetar estado quando modal abre
+  useEffect(() => {
+    if (open) {
+      setPrinted(false);
+    }
+  }, [open, ticket.id]);
 
   const handlePrint = () => {
     const printWindow = window.open("", "", "width=400,height=600");
@@ -189,7 +197,7 @@ export function ThermalTicketPrinter({ open, onClose, ticket }: ThermalTicketPri
     setTimeout(() => {
       printWindow.print();
       printWindow.close();
-      onClose();
+      setPrinted(true);
     }, 500);
   };
 
@@ -248,13 +256,21 @@ export function ThermalTicketPrinter({ open, onClose, ticket }: ThermalTicketPri
 
         {/* Botões */}
         <div className="flex gap-2">
-          <Button variant="outline" onClick={onClose} className="flex-1">
-            Cancelar
-          </Button>
-          <Button onClick={handlePrint} className="flex-1 bg-emerald-600 hover:bg-emerald-700">
-            <Printer size={16} className="mr-2" />
-            Imprimir
-          </Button>
+          {!printed ? (
+            <>
+              <Button variant="outline" onClick={onClose} className="flex-1">
+                Cancelar
+              </Button>
+              <Button onClick={handlePrint} className="flex-1 bg-emerald-600 hover:bg-emerald-700">
+                <Printer size={16} className="mr-2" />
+                Imprimir
+              </Button>
+            </>
+          ) : (
+            <Button onClick={onClose} className="w-full bg-emerald-600 hover:bg-emerald-700">
+              Concluir
+            </Button>
+          )}
         </div>
       </DialogContent>
     </Dialog>

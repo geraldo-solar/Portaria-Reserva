@@ -168,3 +168,8 @@
 
 - [x] Modificar fluxo de venda para exibir pré-visualização antes de imprimir
 - [x] Adicionar modal de confirmação com botões Cancelar e Imprimir
+
+
+## Bug Crítico
+
+- [x] Corrigir app fechando após confirmar impressão de ingresso
