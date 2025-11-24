@@ -16,9 +16,18 @@ export default function ManageProducts() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
+  const utils = trpc.useUtils();
   const ticketTypesQuery = trpc.ticketTypes.list.useQuery();
-  const createTicketTypeMutation = trpc.ticketTypes.create.useMutation();
-  const deleteTicketTypeMutation = trpc.ticketTypes.delete.useMutation();
+  const createTicketTypeMutation = trpc.ticketTypes.create.useMutation({
+    onSuccess: () => {
+      utils.ticketTypes.list.invalidate();
+    },
+  });
+  const deleteTicketTypeMutation = trpc.ticketTypes.delete.useMutation({
+    onSuccess: () => {
+      utils.ticketTypes.list.invalidate();
+    },
+  });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -217,7 +226,6 @@ export default function ManageProducts() {
                               if (confirm(`Tem certeza que deseja excluir "${product.name}"?`)) {
                                 try {
                                   await deleteTicketTypeMutation.mutateAsync(product.id);
-                                  ticketTypesQuery.refetch();
                                 } catch (err) {
                                   alert("Erro ao excluir produto");
                                 }

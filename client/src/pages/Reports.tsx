@@ -29,27 +29,33 @@ export default function Reports() {
   };
 
   const handleExport = () => {
-    if (!salesQuery.data) return;
+    if (!salesQuery.data || salesQuery.data.length === 0) {
+      alert("Nenhum dado para exportar");
+      return;
+    }
 
     const csv = [
-      ["ID", "Cliente", "Preço", "Status", "Data"],
+      ["ID", "Pre\u00e7o", "M\u00e9todo Pagamento", "Status", "Data"],
       ...salesQuery.data.map((ticket) => [
         ticket.id,
-        "-",
         `R$ ${ticket.price.toFixed(2)}`,
-        ticket.status,
+        ticket.paymentMethod === "dinheiro" ? "Dinheiro" : ticket.paymentMethod === "pix" ? "PIX" : "Cart\u00e3o",
+        ticket.status === "active" ? "Ativo" : ticket.status === "cancelled" ? "Cancelado" : "Usado",
         new Date(ticket.createdAt).toLocaleDateString("pt-BR"),
       ]),
     ]
       .map((row) => row.join(","))
       .join("\n");
 
-    const blob = new Blob([csv], { type: "text/csv" });
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
     a.download = `relatorio_${new Date().toISOString().split("T")[0]}.csv`;
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
   };
 
   return (

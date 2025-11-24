@@ -117,3 +117,9 @@
 - [x] Adicionar campo paymentMethod no schema de tickets
 - [x] Atualizar API de criação de ticket para incluir método de pagamento
 - [x] Adicionar resumo por método de pagamento no relatório (dinheiro, cartão, PIX)
+
+
+## Correções de Bugs Urgentes
+
+- [x] Corrigir botão apagar produto (não está funcionando)
+- [x] Corrigir botão exportar CSV no relatório (não está funcionando)
