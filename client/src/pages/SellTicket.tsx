@@ -12,13 +12,12 @@ interface CartItem {
   ticketTypeName: string;
   price: number;
   quantity: number;
-  paymentMethod: "dinheiro" | "pix" | "cartao";
 }
 
 export default function SellTicket() {
   const [, setLocation] = useLocation();
-  const [selectedTicketType, setSelectedTicketType] = useState<number | null>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [paymentMethod, setPaymentMethod] = useState<"dinheiro" | "pix" | "cartao">("dinheiro");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
@@ -51,7 +50,6 @@ export default function SellTicket() {
           ticketTypeName: ticketType.name,
           price: ticketType.price,
           quantity: 1,
-          paymentMethod: "dinheiro",
         },
       ]);
     }
@@ -66,14 +64,6 @@ export default function SellTicket() {
             : item
         )
         .filter((item) => item.quantity > 0)
-    );
-  };
-
-  const handleUpdatePaymentMethod = (ticketTypeId: number, paymentMethod: "dinheiro" | "pix" | "cartao") => {
-    setCart(
-      cart.map((item) =>
-        item.ticketTypeId === ticketTypeId ? { ...item, paymentMethod } : item
-      )
     );
   };
 
@@ -107,7 +97,7 @@ export default function SellTicket() {
           const ticket = await createTicketMutation.mutateAsync({
             customerName: `Cliente ${Date.now()}`,
             ticketTypeId: item.ticketTypeId,
-            paymentMethod: item.paymentMethod,
+            paymentMethod: paymentMethod,
           });
           tickets.push(ticket);
         }
@@ -116,6 +106,7 @@ export default function SellTicket() {
       setSuccessMessage(`${tickets.length} ingresso(s) vendido(s) com sucesso!`);
       setSuccess(true);
       setCart([]);
+      setPaymentMethod("dinheiro");
 
       // Iniciar processo de impressão
       setTicketsToPrint(tickets);
@@ -261,27 +252,6 @@ export default function SellTicket() {
                                 </div>
                               </div>
 
-                              <div>
-                                <label className="block text-xs font-medium text-emerald-800 mb-2">
-                                  Pagamento
-                                </label>
-                                <Select
-                                  value={item.paymentMethod}
-                                  onValueChange={(value: any) =>
-                                    handleUpdatePaymentMethod(item.ticketTypeId, value)
-                                  }
-                                >
-                                  <SelectTrigger className="border-emerald-300 h-8 text-sm">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="dinheiro">💵 Dinheiro</SelectItem>
-                                    <SelectItem value="pix">📱 PIX</SelectItem>
-                                    <SelectItem value="cartao">💳 Cartão</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
-
                               <div className="pt-2 border-t border-emerald-200">
                                 <div className="flex justify-between text-sm font-semibold text-emerald-900">
                                   <span>Subtotal:</span>
@@ -301,6 +271,25 @@ export default function SellTicket() {
                         <div className="flex justify-between text-lg font-bold text-emerald-900">
                           <span>Total a Pagar:</span>
                           <span>R$ {getTotalAmount().toFixed(2)}</span>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-emerald-800 mb-2">
+                            Forma de Pagamento
+                          </label>
+                          <Select
+                            value={paymentMethod}
+                            onValueChange={(value: any) => setPaymentMethod(value)}
+                          >
+                            <SelectTrigger className="border-emerald-300">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="dinheiro">💵 Dinheiro</SelectItem>
+                              <SelectItem value="pix">📱 PIX</SelectItem>
+                              <SelectItem value="cartao">💳 Cartão</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </div>
                       </div>
 

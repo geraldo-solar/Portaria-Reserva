@@ -207,3 +207,10 @@
 - [x] Adicionar seleção de quantidade com botões +/-
 - [x] Implementar preview do total antes de finalizar venda
 - [x] Otimizar interface para operação rápida na portaria
+
+
+## Ajuste de Forma de Pagamento
+
+- [x] Remover seletor de pagamento individual por produto
+- [x] Adicionar seletor único de pagamento para todo o carrinho
+- [x] Aplicar mesma forma de pagamento para todos os ingressos da venda
