@@ -2,7 +2,7 @@ import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Printer, FileText } from "lucide-react";
+import { ArrowLeft, Printer, FileText, XCircle } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useState } from "react";
 import ThermalReportPrinter from "@/components/ThermalReportPrinter";
@@ -14,6 +14,13 @@ export default function Reports() {
   const [startDate, setStartDate] = useState(today);
   const [endDate, setEndDate] = useState(today);
   const [printDialogOpen, setPrintDialogOpen] = useState(false);
+
+  const cancelMutation = trpc.tickets.cancel.useMutation({
+    onSuccess: () => {
+      salesQuery.refetch();
+      statsQuery.refetch();
+    },
+  });
 
   const salesQuery = trpc.reports.sales.useQuery({
     startDate: new Date(startDate + "T00:00:00"),
@@ -250,6 +257,7 @@ export default function Reports() {
                           <th className="px-4 py-2 text-left font-semibold text-gray-700">Status</th>
                           <th className="px-4 py-2 text-left font-semibold text-gray-700">Data</th>
                           <th className="px-4 py-2 text-left font-semibold text-gray-700">Horário</th>
+                          <th className="px-4 py-2 text-center font-semibold text-gray-700">Ações</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -283,6 +291,23 @@ export default function Reports() {
                             </td>
                             <td className="px-4 py-2 text-gray-600">
                               {new Date(ticket.createdAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                            </td>
+                            <td className="px-4 py-2 text-center">
+                              {ticket.status === "active" && (
+                                <Button
+                                  onClick={() => {
+                                    if (window.confirm(`Deseja realmente cancelar o ingresso #${ticket.id}?`)) {
+                                      cancelMutation.mutate({ ticketId: ticket.id, reason: "Cancelado via relatório" });
+                                    }
+                                  }}
+                                  disabled={cancelMutation.isPending}
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                >
+                                  <XCircle size={16} />
+                                </Button>
+                              )}
                             </td>
                           </tr>
                         ))}

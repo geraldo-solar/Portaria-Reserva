@@ -233,3 +233,11 @@
 
 - [x] Adicionar coluna "Horário" na tabela de detalhes das vendas
 - [x] Exibir hora da venda no formato HH:MM
+
+
+## Reorganização de Cancelamento de Ingressos
+
+- [x] Remover botão "Cancelar Ingresso" da página inicial
+- [x] Adicionar botão de cancelamento em cada linha da tabela de relatórios
+- [x] Implementar confirmação antes de cancelar ingresso
+- [x] Atualizar relatório automaticamente após cancelamento

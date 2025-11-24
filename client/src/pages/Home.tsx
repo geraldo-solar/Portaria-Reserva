@@ -1,7 +1,7 @@
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText, LogOut, Ticket, XCircle, Plus } from "lucide-react";
+import { FileText, LogOut, Ticket, Plus } from "lucide-react";
 import { APP_LOGO, APP_TITLE } from "@/const";
 
 export default function Home() {
@@ -21,14 +21,6 @@ export default function Home() {
       href: "/sell",
       color: "from-purple-600 to-pink-600",
     },
-    {
-      title: "Cancelar Ingresso",
-      description: "Cancelar uma venda realizada",
-      icon: XCircle,
-      href: "/cancel",
-      color: "from-red-600 to-orange-600",
-    },
-
     {
       title: "Relatórios",
       description: "Extratos e resumos de vendas",
@@ -84,7 +76,7 @@ export default function Home() {
           <p className="text-emerald-700">Escolha uma opção abaixo para começar</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {menuItems.map((item) => {
             const Icon = item.icon;
             return (
