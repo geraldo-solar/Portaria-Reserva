@@ -3,29 +3,16 @@ import { ticketTypes } from "./drizzle/schema.ts";
 
 const db = drizzle(process.env.DATABASE_URL);
 
-async function seed() {
-  console.log("Seeding database...");
+const types = [
+  { name: "Inteira", description: "Ingresso inteira", price: 100.0 },
+  { name: "Meia-entrada", description: "Meia-entrada (estudante/idoso)", price: 50.0 },
+  { name: "Cortesia", description: "Ingresso cortesia", price: 0.0 },
+  { name: "Entrada", description: "Acesso restaurante", price: 40.0 },
+];
 
-  // Inserir tipos de ingressos
-  await db.insert(ticketTypes).values([
-    {
-      name: "Inteira",
-      description: "Ingresso inteira",
-      price: 10000, // R$ 100,00
-    },
-    {
-      name: "Meia-entrada",
-      description: "Meia-entrada (estudante/idoso)",
-      price: 5000, // R$ 50,00
-    },
-    {
-      name: "Cortesia",
-      description: "Ingresso cortesia",
-      price: 0,
-    },
-  ]);
-
-  console.log("Database seeded successfully!");
+for (const type of types) {
+  await db.insert(ticketTypes).values(type).onDuplicateKeyUpdate({ set: { name: type.name } });
 }
 
-seed().catch(console.error);
+console.log("✓ Tipos de ingressos inseridos com sucesso");
+process.exit(0);

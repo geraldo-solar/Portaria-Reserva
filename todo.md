@@ -123,3 +123,8 @@
 
 - [x] Corrigir botão apagar produto (não está funcionando)
 - [x] Corrigir botão exportar CSV no relatório (não está funcionando)
+
+
+## Bug Crítico
+
+- [x] Investigar e corrigir botão de exclusão de produto (diálogo customizado implementado)

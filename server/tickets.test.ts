@@ -33,10 +33,25 @@ function createContext(): TrpcContext {
 
 describe("Tickets API", () => {
   let caller: ReturnType<typeof appRouter.createCaller>;
+  let validTicketTypeId: number;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     const ctx = createContext();
     caller = appRouter.createCaller(ctx);
+    
+    // Buscar um ticketType válido existente
+    const ticketTypes = await caller.ticketTypes.list();
+    if (ticketTypes.length > 0) {
+      validTicketTypeId = ticketTypes[0].id;
+    } else {
+      // Se não existir, criar um
+      const created = await caller.ticketTypes.create({
+        name: "Test Ticket",
+        description: "Test ticket type",
+        price: 50.0,
+      });
+      validTicketTypeId = created.id;
+    }
   });
 
   describe("ticketTypes.list", () => {
@@ -68,7 +83,7 @@ describe("Tickets API", () => {
         customerName: "John Doe",
         customerEmail: "john@example.com",
         customerPhone: "(11) 99999-9999",
-        ticketTypeId: 1,
+        ticketTypeId: validTicketTypeId,
         paymentMethod: "dinheiro",
       });
 
@@ -84,7 +99,7 @@ describe("Tickets API", () => {
       try {
         await caller.tickets.create({
           customerName: "",
-          ticketTypeId: 1,
+          ticketTypeId: validTicketTypeId,
           paymentMethod: "dinheiro",
         });
         expect.fail("Should have thrown an error");
@@ -117,7 +132,7 @@ describe("Tickets API", () => {
       // Criar um ingresso
       const created = await caller.tickets.create({
         customerName: "Jane Doe",
-        ticketTypeId: 1,
+        ticketTypeId: validTicketTypeId,
         paymentMethod: "pix",
       });
 
@@ -134,7 +149,7 @@ describe("Tickets API", () => {
       // Criar um ingresso
       const created = await caller.tickets.create({
         customerName: "Bob Smith",
-        ticketTypeId: 1,
+        ticketTypeId: validTicketTypeId,
         paymentMethod: "cartao",
       });
 
@@ -156,7 +171,7 @@ describe("Tickets API", () => {
       // Criar um ingresso
       const created = await caller.tickets.create({
         customerName: "Alice Johnson",
-        ticketTypeId: 1,
+        ticketTypeId: validTicketTypeId,
         paymentMethod: "dinheiro",
       });
 
