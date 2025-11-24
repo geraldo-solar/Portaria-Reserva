@@ -1,24 +1,24 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AlertCircle, CheckCircle, Plus, Trash2, ArrowLeft } from "lucide-react";
+import { AlertCircle, CheckCircle, ArrowLeft, Plus, Minus, Ticket } from "lucide-react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { ThermalTicketPrinter } from "@/components/ThermalTicketPrinter";
 
-interface SaleItem {
-  id: string;
-  ticketTypeId: string;
+interface CartItem {
+  ticketTypeId: number;
+  ticketTypeName: string;
+  price: number;
+  quantity: number;
   paymentMethod: "dinheiro" | "pix" | "cartao";
 }
 
 export default function SellTicket() {
   const [, setLocation] = useLocation();
-  const [saleItems, setSaleItems] = useState<SaleItem[]>([
-    { id: "1", ticketTypeId: "", paymentMethod: "dinheiro" },
-  ]);
+  const [selectedTicketType, setSelectedTicketType] = useState<number | null>(null);
+  const [cart, setCart] = useState<CartItem[]>([]);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
@@ -29,156 +29,64 @@ export default function SellTicket() {
   const ticketTypesQuery = trpc.ticketTypes.list.useQuery();
   const createTicketMutation = trpc.tickets.create.useMutation();
 
-  const handleAddItem = () => {
-    setSaleItems([
-      ...saleItems,
-      { id: Date.now().toString(), ticketTypeId: "", paymentMethod: "dinheiro" },
-    ]);
-  };
+  const handleSelectTicketType = (ticketTypeId: number) => {
+    const ticketType = ticketTypesQuery.data?.find((t) => t.id === ticketTypeId);
+    if (!ticketType) return;
 
-  const handleRemoveItem = (id: string) => {
-    if (saleItems.length > 1) {
-      setSaleItems(saleItems.filter((item) => item.id !== id));
+    const existingItem = cart.find((item) => item.ticketTypeId === ticketTypeId);
+    
+    if (existingItem) {
+      setCart(
+        cart.map((item) =>
+          item.ticketTypeId === ticketTypeId
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        )
+      );
+    } else {
+      setCart([
+        ...cart,
+        {
+          ticketTypeId: ticketType.id,
+          ticketTypeName: ticketType.name,
+          price: ticketType.price,
+          quantity: 1,
+          paymentMethod: "dinheiro",
+        },
+      ]);
     }
   };
 
-  const handleItemChange = (id: string, field: string, value: string) => {
-    setSaleItems(
-      saleItems.map((item) =>
-        item.id === id ? { ...item, [field]: value } : item
+  const handleUpdateQuantity = (ticketTypeId: number, delta: number) => {
+    setCart(
+      cart
+        .map((item) =>
+          item.ticketTypeId === ticketTypeId
+            ? { ...item, quantity: Math.max(0, item.quantity + delta) }
+            : item
+        )
+        .filter((item) => item.quantity > 0)
+    );
+  };
+
+  const handleUpdatePaymentMethod = (ticketTypeId: number, paymentMethod: "dinheiro" | "pix" | "cartao") => {
+    setCart(
+      cart.map((item) =>
+        item.ticketTypeId === ticketTypeId ? { ...item, paymentMethod } : item
       )
     );
   };
 
-  const handlePrintTicket = (ticket: any) => {
-    const printWindow = window.open("", "", "width=400,height=600");
-    if (!printWindow) return;
+  const handleRemoveFromCart = (ticketTypeId: number) => {
+    setCart(cart.filter((item) => item.ticketTypeId !== ticketTypeId));
+  };
 
-    const ticketType = ticketTypesQuery.data?.find(
-      (t) => t.id === ticket.ticketTypeId
-    );
+  const getTotalAmount = () => {
+    return cart.reduce((total, item) => total + item.price * item.quantity, 0);
+  };
 
-    const html = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="UTF-8">
-          <title>Ingresso</title>
-          <style>
-            * {
-              margin: 0;
-              padding: 0;
-              box-sizing: border-box;
-            }
-            
-            body {
-              font-family: 'Courier New', monospace;
-              width: 80mm;
-              padding: 3mm;
-              background: white;
-            }
-            
-            .ticket {
-              text-align: center;
-              border: 2px solid #000;
-              padding: 5mm;
-              min-height: 100mm;
-              display: flex;
-              flex-direction: column;
-              justify-content: space-between;
-            }
-            
-            .header {
-              font-size: 12px;
-              font-weight: bold;
-              margin-bottom: 3mm;
-              text-transform: uppercase;
-            }
-            
-            .title {
-              font-size: 14px;
-              font-weight: bold;
-              margin: 2mm 0;
-              text-transform: uppercase;
-            }
-            
-            .info {
-              font-size: 9px;
-              margin: 1.5mm 0;
-              text-align: center;
-              word-wrap: break-word;
-            }
-            
-            .footer {
-              font-size: 8px;
-              margin-top: 3mm;
-              border-top: 1px dashed #000;
-              padding-top: 3mm;
-            }
-            
-            .ticket-id {
-              font-size: 9px;
-              font-weight: bold;
-              margin: 2mm 0;
-              word-break: break-all;
-            }
-            
-            @media print {
-              body {
-                margin: 0;
-                padding: 0;
-              }
-              .ticket {
-                border: none;
-                page-break-after: always;
-              }
-            }
-          </style>
-        </head>
-        <body>
-          <div class="ticket">
-            <div>
-              <div class="header">🎫 INGRESSO</div>
-              <div class="title">RESERVA SOLAR</div>
-              
-              <div class="info">
-                <strong>ID:</strong> #${ticket.id}
-              </div>
-              
-              <div class="info">
-                <strong>Tipo:</strong> ${ticketType?.name || "Padrão"}
-              </div>
-              
-              <div class="info">
-                <strong>Preço:</strong> R$ ${ticketType?.price.toFixed(2) || "0.00"}
-              </div>
-              
-              <div class="info">
-                <strong>Data:</strong> ${new Date(ticket.createdAt).toLocaleDateString("pt-BR")}
-              </div>
-
-            </div>
-            
-            <div class="footer">
-              <div style="font-size: 7px; margin-bottom: 2mm;">
-                Válido por 1 dia a partir da emissão
-              </div>
-              <div style="font-size: 7px;">
-                Apresente este ingresso na entrada
-              </div>
-            </div>
-          </div>
-        </body>
-      </html>
-    `;
-
-    printWindow.document.write(html);
-    printWindow.document.close();
-
-    setTimeout(() => {
-      printWindow.print();
-      printWindow.close();
-    }, 500);
+  const getTotalQuantity = () => {
+    return cart.reduce((total, item) => total + item.quantity, 0);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -186,32 +94,28 @@ export default function SellTicket() {
     setError("");
     setSuccess(false);
 
-    // Validar todos os itens
-    for (const item of saleItems) {
-      if (!item.ticketTypeId || !item.paymentMethod) {
-        setError("Preencha todos os campos obrigatórios");
-        return;
-      }
+    if (cart.length === 0) {
+      setError("Adicione pelo menos um ingresso ao carrinho");
+      return;
     }
 
     try {
-      let successCount = 0;
       const tickets: any[] = [];
 
-      for (const item of saleItems) {
-        const ticket = await createTicketMutation.mutateAsync({
-          customerName: `Cliente ${Date.now()}`,
-          ticketTypeId: parseInt(item.ticketTypeId),
-          paymentMethod: item.paymentMethod,
-        });
-
-        tickets.push(ticket);
-        successCount++;
+      for (const item of cart) {
+        for (let i = 0; i < item.quantity; i++) {
+          const ticket = await createTicketMutation.mutateAsync({
+            customerName: `Cliente ${Date.now()}`,
+            ticketTypeId: item.ticketTypeId,
+            paymentMethod: item.paymentMethod,
+          });
+          tickets.push(ticket);
+        }
       }
 
-      setSuccessMessage(`${successCount} ingresso(s) vendido(s) com sucesso!`);
+      setSuccessMessage(`${tickets.length} ingresso(s) vendido(s) com sucesso!`);
       setSuccess(true);
-      setSaleItems([{ id: "1", ticketTypeId: "", paymentMethod: "dinheiro" }]);
+      setCart([]);
 
       // Iniciar processo de impressão
       setTicketsToPrint(tickets);
@@ -244,104 +148,173 @@ export default function SellTicket() {
 
       <div className="space-y-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Formulário de Venda */}
+          {/* Seleção de Produtos */}
           <div className="lg:col-span-2">
             <Card>
               <CardHeader>
-                <CardTitle>Venda de Ingressos</CardTitle>
+                <CardTitle>Selecione os Ingressos</CardTitle>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  {/* Items de venda */}
-                  <div className="space-y-4 max-h-96 overflow-y-auto">
-                    {saleItems.map((item, index) => (
-                      <div
-                        key={item.id}
-                        className="p-4 border border-emerald-200 rounded-lg bg-emerald-50"
-                      >
-                        <div className="flex justify-between items-center mb-3">
-                          <h3 className="font-semibold text-emerald-800">
-                            Ingresso #{index + 1}
-                          </h3>
-                          {saleItems.length > 1 && (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleRemoveItem(item.id)}
-                              className="text-red-600 hover:text-red-700"
-                            >
-                              <Trash2 size={16} />
-                            </Button>
-                          )}
-                        </div>
-
-                        <div className="space-y-3">
-                          <div>
-                            <label className="block text-sm font-medium text-emerald-800 mb-1">
-                              Tipo de Ingresso *
-                            </label>
-                            <Select
-                              value={item.ticketTypeId}
-                              onValueChange={(value) =>
-                                handleItemChange(item.id, "ticketTypeId", value)
-                              }
-                            >
-                              <SelectTrigger className="border-emerald-300">
-                                <SelectValue placeholder="Selecione um tipo" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {ticketTypesQuery.data?.map((type) => (
-                                  <SelectItem
-                                    key={type.id}
-                                    value={type.id.toString()}
-                                  >
-                                    {type.name} - R$ {type.price.toFixed(2)}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {ticketTypesQuery.data?.map((ticketType) => (
+                    <button
+                      key={ticketType.id}
+                      onClick={() => handleSelectTicketType(ticketType.id)}
+                      className="p-6 border-2 border-emerald-300 rounded-lg bg-gradient-to-br from-emerald-50 to-white hover:from-emerald-100 hover:to-emerald-50 hover:border-emerald-500 transition-all duration-200 text-left group"
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-emerald-600 rounded-lg group-hover:bg-emerald-700 transition-colors">
+                            <Ticket className="text-white" size={24} />
                           </div>
-
                           <div>
-                            <label className="block text-sm font-medium text-emerald-800 mb-1">
-                              Método de Pagamento *
-                            </label>
-                            <Select
-                              value={item.paymentMethod}
-                              onValueChange={(value) =>
-                                handleItemChange(item.id, "paymentMethod", value)
-                              }
-                            >
-                              <SelectTrigger className="border-emerald-300">
-                                <SelectValue placeholder="Selecione o método" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="dinheiro">
-                                  💵 Dinheiro
-                                </SelectItem>
-                                <SelectItem value="pix">💳 PIX</SelectItem>
-                                <SelectItem value="cartao">
-                                  🏧 Cartão
-                                </SelectItem>
-                              </SelectContent>
-                            </Select>
+                            <h3 className="font-bold text-lg text-emerald-900">
+                              {ticketType.name}
+                            </h3>
+                            <p className="text-2xl font-bold text-emerald-700">
+                              R$ {ticketType.price.toFixed(2)}
+                            </p>
                           </div>
                         </div>
                       </div>
-                    ))}
-                  </div>
+                      <div className="text-sm text-emerald-600 font-medium">
+                        Clique para adicionar ao carrinho
+                      </div>
+                    </button>
+                  ))}
+                </div>
 
-                  {/* Botão adicionar */}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full border-emerald-300 text-emerald-700 hover:bg-emerald-50"
-                    onClick={handleAddItem}
-                  >
-                    <Plus size={16} className="mr-2" />
-                    Adicionar Ingresso
-                  </Button>
+                {ticketTypesQuery.data?.length === 0 && (
+                  <div className="text-center py-8 text-gray-500">
+                    Nenhum tipo de ingresso cadastrado
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Carrinho e Resumo */}
+          <div className="lg:col-span-1">
+            <Card className="sticky top-6">
+              <CardHeader>
+                <CardTitle>Carrinho</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  {cart.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">
+                      Carrinho vazio
+                    </div>
+                  ) : (
+                    <>
+                      <div className="space-y-3 max-h-96 overflow-y-auto">
+                        {cart.map((item) => (
+                          <div
+                            key={item.ticketTypeId}
+                            className="p-4 border border-emerald-200 rounded-lg bg-emerald-50"
+                          >
+                            <div className="space-y-3">
+                              <div className="flex justify-between items-start">
+                                <div>
+                                  <h4 className="font-semibold text-emerald-900">
+                                    {item.ticketTypeName}
+                                  </h4>
+                                  <p className="text-sm text-emerald-700">
+                                    R$ {item.price.toFixed(2)} cada
+                                  </p>
+                                </div>
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveFromCart(item.ticketTypeId)}
+                                  className="text-red-600 hover:text-red-700 text-sm"
+                                >
+                                  Remover
+                                </button>
+                              </div>
+
+                              <div>
+                                <label className="block text-xs font-medium text-emerald-800 mb-2">
+                                  Quantidade
+                                </label>
+                                <div className="flex items-center gap-2">
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleUpdateQuantity(item.ticketTypeId, -1)}
+                                    className="h-8 w-8 p-0"
+                                  >
+                                    <Minus size={16} />
+                                  </Button>
+                                  <span className="text-lg font-bold text-emerald-900 min-w-[3ch] text-center">
+                                    {item.quantity}
+                                  </span>
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => handleUpdateQuantity(item.ticketTypeId, 1)}
+                                    className="h-8 w-8 p-0"
+                                  >
+                                    <Plus size={16} />
+                                  </Button>
+                                </div>
+                              </div>
+
+                              <div>
+                                <label className="block text-xs font-medium text-emerald-800 mb-2">
+                                  Pagamento
+                                </label>
+                                <Select
+                                  value={item.paymentMethod}
+                                  onValueChange={(value: any) =>
+                                    handleUpdatePaymentMethod(item.ticketTypeId, value)
+                                  }
+                                >
+                                  <SelectTrigger className="border-emerald-300 h-8 text-sm">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="dinheiro">💵 Dinheiro</SelectItem>
+                                    <SelectItem value="pix">📱 PIX</SelectItem>
+                                    <SelectItem value="cartao">💳 Cartão</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+
+                              <div className="pt-2 border-t border-emerald-200">
+                                <div className="flex justify-between text-sm font-semibold text-emerald-900">
+                                  <span>Subtotal:</span>
+                                  <span>R$ {(item.price * item.quantity).toFixed(2)}</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div className="border-t pt-4 space-y-3">
+                        <div className="flex justify-between text-sm text-emerald-800">
+                          <span>Total de Ingressos:</span>
+                          <span className="font-semibold">{getTotalQuantity()}</span>
+                        </div>
+                        <div className="flex justify-between text-lg font-bold text-emerald-900">
+                          <span>Total a Pagar:</span>
+                          <span>R$ {getTotalAmount().toFixed(2)}</span>
+                        </div>
+                      </div>
+
+                      <Button
+                        type="submit"
+                        className="w-full bg-emerald-600 hover:bg-emerald-700"
+                        disabled={createTicketMutation.isPending}
+                      >
+                        {createTicketMutation.isPending
+                          ? "Processando..."
+                          : "Finalizar Venda"}
+                      </Button>
+                    </>
+                  )}
 
                   {error && (
                     <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
@@ -356,74 +329,7 @@ export default function SellTicket() {
                       <span>{successMessage}</span>
                     </div>
                   )}
-
-                  <Button
-                    type="submit"
-                    disabled={createTicketMutation.isPending}
-                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold"
-                  >
-                    {createTicketMutation.isPending
-                      ? "Processando..."
-                      : "Vender e Imprimir"}
-                  </Button>
                 </form>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Resumo */}
-          <div>
-            <Card className="sticky top-4">
-              <CardHeader>
-                <CardTitle>Resumo da Venda</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="text-sm">
-                    <p className="text-gray-600">Quantidade de ingressos:</p>
-                    <p className="text-2xl font-bold text-emerald-700">
-                      {saleItems.length}
-                    </p>
-                  </div>
-
-                  <div className="border-t border-emerald-200 pt-3">
-                    <p className="text-sm text-gray-600 mb-2">
-                      Métodos de pagamento:
-                    </p>
-                    <div className="space-y-1 text-sm">
-                      {saleItems.map((item) => (
-                        <div key={item.id} className="flex justify-between">
-                          <span className="text-gray-600">
-                            {item.paymentMethod === "dinheiro" && "💵"}
-                            {item.paymentMethod === "pix" && "💳"}
-                            {item.paymentMethod === "cartao" && "🏧"}
-                            {item.paymentMethod || "—"}
-                          </span>
-                          <span className="font-medium">
-                            {ticketTypesQuery.data?.find(
-                              (t) => t.id === parseInt(item.ticketTypeId)
-                            )?.name || "—"}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="border-t border-emerald-200 pt-3">
-                    <p className="text-sm text-gray-600">Valor total:</p>
-                    <p className="text-2xl font-bold text-emerald-700">
-                      R${" "}
-                      {saleItems
-                        .reduce((total, item) => {
-                          const ticketType = ticketTypesQuery.data?.find(
-                            (t) => t.id === parseInt(item.ticketTypeId)
-                          );
-                          return total + (ticketType?.price || 0);
-                        }, 0)
-                        .toFixed(2)}
-                    </p>
-                  </div>
-                </div>
               </CardContent>
             </Card>
           </div>
@@ -435,7 +341,6 @@ export default function SellTicket() {
         <ThermalTicketPrinter
           open={showPrintModal}
           onClose={() => {
-            // Próximo ticket ou fechar
             if (currentPrintIndex < ticketsToPrint.length - 1) {
               setCurrentPrintIndex(currentPrintIndex + 1);
             } else {
@@ -444,16 +349,7 @@ export default function SellTicket() {
               setCurrentPrintIndex(0);
             }
           }}
-          ticket={{
-            id: ticketsToPrint[currentPrintIndex].id,
-            customerName: ticketsToPrint[currentPrintIndex].customerName,
-            ticketType:
-              ticketTypesQuery.data?.find(
-                (t) => t.id === ticketsToPrint[currentPrintIndex].ticketTypeId
-              )?.name || "Padrão",
-            price: ticketsToPrint[currentPrintIndex].price / 100,
-            createdAt: new Date(ticketsToPrint[currentPrintIndex].createdAt),
-          }}
+          ticket={ticketsToPrint[currentPrintIndex]}
         />
       )}
     </>

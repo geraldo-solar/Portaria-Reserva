@@ -192,3 +192,18 @@
 - [x] Remover sobra de papel no cabeçalho da impressão de ingresso
 - [x] Ajustar CSS @media print para remover margens desnecessárias
 - [x] Otimizar espaçamentos e paddings para economia máxima de papel
+
+
+## Bug Crítico - Tela Branca
+
+- [ ] Investigar erro que está causando tela branca no aplicativo
+- [ ] Verificar logs do console do navegador
+- [ ] Corrigir erro de runtime ou compilação
+
+
+## Melhoria do Layout de Venda de Produtos
+
+- [x] Substituir dropdown de produtos por botões grandes e visuais
+- [x] Adicionar seleção de quantidade com botões +/-
+- [x] Implementar preview do total antes de finalizar venda
+- [x] Otimizar interface para operação rápida na portaria
