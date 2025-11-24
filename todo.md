@@ -104,3 +104,9 @@
 ## Correção Urgente
 
 - [x] Corrigir botão gerar relatório (não está carregando dados)
+
+
+## Ajuste de Relatório
+
+- [x] Gerar automaticamente relatório do dia atual ao acessar página
+- [x] Mostrar detalhamento completo do dia atual

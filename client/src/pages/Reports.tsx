@@ -9,21 +9,18 @@ import { useState } from "react";
 export default function Reports() {
   const [, setLocation] = useLocation();
   const today = new Date().toISOString().split("T")[0];
-  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-    .toISOString()
-    .split("T")[0];
 
-  const [startDate, setStartDate] = useState(thirtyDaysAgo);
+  const [startDate, setStartDate] = useState(today);
   const [endDate, setEndDate] = useState(today);
 
   const salesQuery = trpc.reports.sales.useQuery({
     startDate: new Date(startDate),
-    endDate: new Date(endDate),
+    endDate: new Date(endDate + "T23:59:59"),
   });
 
   const statsQuery = trpc.reports.stats.useQuery({
     startDate: new Date(startDate),
-    endDate: new Date(endDate),
+    endDate: new Date(endDate + "T23:59:59"),
   });
 
   const handleSearch = () => {
