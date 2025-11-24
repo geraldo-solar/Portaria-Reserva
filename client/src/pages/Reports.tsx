@@ -8,28 +8,25 @@ import { useState } from "react";
 
 export default function Reports() {
   const [, setLocation] = useLocation();
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [hasSearched, setHasSearched] = useState(false);
+  const today = new Date().toISOString().split("T")[0];
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+    .toISOString()
+    .split("T")[0];
 
-  const salesQuery = trpc.reports.sales.useQuery(
-    {
-      startDate: startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-      endDate: endDate ? new Date(endDate) : new Date(),
-    },
-    { enabled: hasSearched }
-  );
+  const [startDate, setStartDate] = useState(thirtyDaysAgo);
+  const [endDate, setEndDate] = useState(today);
 
-  const statsQuery = trpc.reports.stats.useQuery(
-    {
-      startDate: startDate ? new Date(startDate) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-      endDate: endDate ? new Date(endDate) : new Date(),
-    },
-    { enabled: hasSearched }
-  );
+  const salesQuery = trpc.reports.sales.useQuery({
+    startDate: new Date(startDate),
+    endDate: new Date(endDate),
+  });
+
+  const statsQuery = trpc.reports.stats.useQuery({
+    startDate: new Date(startDate),
+    endDate: new Date(endDate),
+  });
 
   const handleSearch = () => {
-    setHasSearched(true);
     salesQuery.refetch();
     statsQuery.refetch();
   };
@@ -57,11 +54,6 @@ export default function Reports() {
     a.download = `relatorio_${new Date().toISOString().split("T")[0]}.csv`;
     a.click();
   };
-
-  const today = new Date().toISOString().split("T")[0];
-  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-    .toISOString()
-    .split("T")[0];
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-emerald-100">
@@ -98,7 +90,7 @@ export default function Reports() {
                 </label>
                 <Input
                   type="date"
-                  value={startDate || thirtyDaysAgo}
+                  value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
                 />
               </div>
@@ -108,7 +100,7 @@ export default function Reports() {
                 </label>
                 <Input
                   type="date"
-                  value={endDate || today}
+                  value={endDate}
                   onChange={(e) => setEndDate(e.target.value)}
                 />
               </div>
@@ -125,7 +117,7 @@ export default function Reports() {
           </CardContent>
         </Card>
 
-        {hasSearched && (
+        {salesQuery.data && (
           <>
             {/* Stats */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">

@@ -99,3 +99,8 @@
 - [x] Corrigir botão gerar relatório
 - [x] Implementar funcionalidade de excluir produto
 - [x] Corrigir background da logomarca (fundo branco não exibe logo branca)
+
+
+## Correção Urgente
+
+- [x] Corrigir botão gerar relatório (não está carregando dados)
