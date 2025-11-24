@@ -135,3 +135,8 @@
 - [x] Criar componente de pré-visualização de impressão térmica para relatório
 - [x] Substituir botão CSV por botão de impressão com modal de pré-visualização
 - [x] Implementar impressão automática após confirmação
+
+
+## Ajuste de Relatório
+
+- [x] Remover coluna QR code da tabela de relatórios

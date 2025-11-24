@@ -246,7 +246,6 @@ export default function Reports() {
                           <th className="px-4 py-2 text-left font-semibold text-gray-700">Preço</th>
                           <th className="px-4 py-2 text-left font-semibold text-gray-700">Status</th>
                           <th className="px-4 py-2 text-left font-semibold text-gray-700">Data</th>
-                          <th className="px-4 py-2 text-left font-semibold text-gray-700">QR Code</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -271,9 +270,6 @@ export default function Reports() {
                             </td>
                             <td className="px-4 py-2 text-gray-600">
                               {new Date(ticket.createdAt).toLocaleDateString("pt-BR")}
-                            </td>
-                            <td className="px-4 py-2 text-gray-600 text-xs font-mono">
-                              {ticket.qrCode.slice(0, 8)}...
                             </td>
                           </tr>
                         ))}
