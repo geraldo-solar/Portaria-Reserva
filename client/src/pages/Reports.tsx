@@ -37,13 +37,14 @@ export default function Reports() {
     }
 
     const csv = [
-      ["ID", "Pre\u00e7o", "M\u00e9todo Pagamento", "Status", "Data"],
+      ["ID", "Pre\u00e7o", "M\u00e9todo Pagamento", "Status", "Data", "Hor\u00e1rio"],
       ...salesQuery.data.map((ticket) => [
         ticket.id,
         `R$ ${ticket.price.toFixed(2)}`,
         ticket.paymentMethod === "dinheiro" ? "Dinheiro" : ticket.paymentMethod === "pix" ? "PIX" : "Cart\u00e3o",
         ticket.status === "active" ? "Ativo" : ticket.status === "cancelled" ? "Cancelado" : "Usado",
         new Date(ticket.createdAt).toLocaleDateString("pt-BR"),
+        new Date(ticket.createdAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }),
       ]),
     ]
       .map((row) => row.join(","))
@@ -248,6 +249,7 @@ export default function Reports() {
                           <th className="px-4 py-2 text-left font-semibold text-gray-700">Pagamento</th>
                           <th className="px-4 py-2 text-left font-semibold text-gray-700">Status</th>
                           <th className="px-4 py-2 text-left font-semibold text-gray-700">Data</th>
+                          <th className="px-4 py-2 text-left font-semibold text-gray-700">Horário</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -278,6 +280,9 @@ export default function Reports() {
                             </td>
                             <td className="px-4 py-2 text-gray-600">
                               {new Date(ticket.createdAt).toLocaleDateString("pt-BR")}
+                            </td>
+                            <td className="px-4 py-2 text-gray-600">
+                              {new Date(ticket.createdAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
                             </td>
                           </tr>
                         ))}

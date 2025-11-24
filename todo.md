@@ -227,3 +227,9 @@
 ## Remoção de Resumo de Vendas da Página Inicial
 
 - [x] Remover cards de estatísticas (Ingressos Vendidos, Receita Total, Cancelamentos) da página inicial
+
+
+## Adicionar Horário no Relatório de Vendas
+
+- [x] Adicionar coluna "Horário" na tabela de detalhes das vendas
+- [x] Exibir hora da venda no formato HH:MM
