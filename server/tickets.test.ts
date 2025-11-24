@@ -90,7 +90,6 @@ describe("Tickets API", () => {
       expect(result).toBeDefined();
       expect(result.id).toBeDefined();
       expect(result.customerId).toBeDefined();
-      expect(result.qrCode).toBeDefined();
       expect(result.status).toBe("active");
       expect(result.price).toBeGreaterThanOrEqual(0);
     });
@@ -140,7 +139,6 @@ describe("Tickets API", () => {
       const result = await caller.tickets.getById(created.id);
       expect(result).toBeDefined();
       expect(result?.id).toBe(created.id);
-      expect(result?.qrCode).toBe(created.qrCode);
     });
   });
 

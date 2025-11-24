@@ -1,15 +1,13 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Printer, X } from "lucide-react";
-import { QRCodeSVG } from "qrcode.react";
-import { useRef, useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 
 interface ThermalTicketPrinterProps {
   open: boolean;
   onClose: () => void;
   ticket: {
     id: number;
-    qrCode: string;
     customerName?: string;
     ticketType?: string;
     price: number;
@@ -18,7 +16,6 @@ interface ThermalTicketPrinterProps {
 }
 
 export function ThermalTicketPrinter({ open, onClose, ticket }: ThermalTicketPrinterProps) {
-  const qrRef = useRef<HTMLDivElement>(null);
   const [printed, setPrinted] = useState(false);
 
   // Resetar estado quando modal abre
@@ -32,9 +29,7 @@ export function ThermalTicketPrinter({ open, onClose, ticket }: ThermalTicketPri
     const printWindow = window.open("", "", "width=400,height=600");
     if (!printWindow) return;
 
-    // Obter o QR code como imagem
-    const qrCanvas = qrRef.current?.querySelector("canvas");
-    const qrImage = qrCanvas?.toDataURL("image/png") || "";
+
 
     // HTML para papel térmico 58mm
     const html = `
@@ -102,18 +97,7 @@ export function ThermalTicketPrinter({ open, onClose, ticket }: ThermalTicketPri
               font-weight: bold;
             }
             
-            .qr-container {
-              margin: 4mm 0;
-              text-align: center;
-            }
-            
-            .qr-code {
-              max-width: 35mm;
-              height: auto;
-              display: inline-block;
-              border: 1px solid #000;
-            }
-            
+
             .footer {
               font-size: 8px;
               margin-top: 3mm;
@@ -169,12 +153,8 @@ export function ThermalTicketPrinter({ open, onClose, ticket }: ThermalTicketPri
               <div class="info">
                 <span class="info-label">Data:</span> ${new Date(ticket.createdAt).toLocaleDateString("pt-BR")}
               </div>
-              
-              ${qrImage ? `<div class="qr-container"><img src="${qrImage}" class="qr-code" /></div>` : ""}
-              
-              <div class="ticket-id">
-                ${ticket.qrCode}
-              </div>
+
+
             </div>
             
             <div class="footer">
@@ -236,15 +216,7 @@ export function ThermalTicketPrinter({ open, onClose, ticket }: ThermalTicketPri
               <div><span className="font-bold">Data:</span> {new Date(ticket.createdAt).toLocaleDateString("pt-BR")}</div>
             </div>
 
-            {/* QR Code */}
-            <div ref={qrRef} className="py-3">
-              <QRCodeSVG value={ticket.qrCode} size={128} level="H" includeMargin={true} />
-            </div>
 
-            {/* Código */}
-            <div className="text-[10px] font-bold break-all border-b pb-2">
-              {ticket.qrCode}
-            </div>
 
             {/* Rodapé */}
             <div className="text-[10px] pt-2">

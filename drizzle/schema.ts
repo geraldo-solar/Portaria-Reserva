@@ -62,7 +62,6 @@ export const tickets = mysqlTable("tickets", {
   ticketTypeId: int("ticketTypeId").notNull(),
   price: int("price").notNull(), // Preço em centavos
   paymentMethod: mysqlEnum("paymentMethod", ["dinheiro", "pix", "cartao"]).notNull(),
-  qrCode: varchar("qrCode", { length: 255 }).notNull().unique(),
   status: mysqlEnum("status", ["active", "cancelled", "used"]).default("active").notNull(),
   cancelledAt: timestamp("cancelledAt"),
   cancellationReason: text("cancellationReason"),

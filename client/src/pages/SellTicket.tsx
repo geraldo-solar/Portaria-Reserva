@@ -156,10 +156,7 @@ export default function SellTicket() {
               <div class="info">
                 <strong>Data:</strong> ${new Date(ticket.createdAt).toLocaleDateString("pt-BR")}
               </div>
-              
-              <div class="ticket-id">
-                ${ticket.qrCode}
-              </div>
+
             </div>
             
             <div class="footer">
@@ -449,7 +446,6 @@ export default function SellTicket() {
           }}
           ticket={{
             id: ticketsToPrint[currentPrintIndex].id,
-            qrCode: ticketsToPrint[currentPrintIndex].qrCode,
             customerName: ticketsToPrint[currentPrintIndex].customerName,
             ticketType:
               ticketTypesQuery.data?.find(

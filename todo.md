@@ -173,3 +173,14 @@
 ## Bug Crítico
 
 - [x] Corrigir app fechando após confirmar impressão de ingresso
+
+
+## Remoção de QR Codes
+
+- [x] Remover campo qrCode do schema do banco de dados
+- [x] Remover QR code dos componentes de impressão de ingresso
+- [x] Remover QR code da impressão de relatório
+- [x] Atualizar APIs para não gerar qrCode
+- [x] Remover dependência qrcode.react do package.json
+- [x] Remover verificações de qrCode dos testes unitários
+- [x] Ajustar layouts de impressão para remover espaço do QR code

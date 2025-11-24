@@ -143,16 +143,7 @@ export async function getTicketById(id: number) {
   return result.length > 0 ? result[0] : null;
 }
 
-/**
- * Obter ingresso por QR code
- */
-export async function getTicketByQRCode(qrCode: string) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
-  const result = await db.select().from(tickets).where(eq(tickets.qrCode, qrCode)).limit(1);
-  return result.length > 0 ? result[0] : null;
-}
+
 
 /**
  * Listar todos os ingressos com filtros opcionais
@@ -175,7 +166,6 @@ export async function listTickets(filters?: {
       ticketTypeName: ticketTypes.name,
       price: tickets.price,
       status: tickets.status,
-      qrCode: tickets.qrCode,
       paymentMethod: tickets.paymentMethod,
       createdAt: tickets.createdAt,
       cancelledAt: tickets.cancelledAt,
@@ -286,7 +276,6 @@ export async function getSalesReport(startDate: Date, endDate: Date) {
       ticketTypeName: ticketTypes.name,
       price: tickets.price,
       status: tickets.status,
-      qrCode: tickets.qrCode,
       paymentMethod: tickets.paymentMethod,
       createdAt: tickets.createdAt,
       cancelledAt: tickets.cancelledAt,

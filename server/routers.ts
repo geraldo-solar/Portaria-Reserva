@@ -9,7 +9,6 @@ import {
   listTicketTypes,
   createTicket,
   getTicketById,
-  getTicketByQRCode,
   listTickets,
   cancelTicket,
   markTicketAsPrinted,
@@ -76,14 +75,11 @@ export const appRouter = router({
           throw new Error("Ticket type not found");
         }
 
-        const qrCode = uuidv4();
-
         const ticketResult = await createTicket({
           customerId,
           ticketTypeId: input.ticketTypeId,
           price: ticketType.price,
           paymentMethod: input.paymentMethod,
-          qrCode,
           status: "active",
         });
 
@@ -100,7 +96,6 @@ export const appRouter = router({
           customerId,
           ticketTypeId: input.ticketTypeId,
           price: ticketType.price / 100,
-          qrCode,
           status: "active",
           createdAt: new Date(),
         };
@@ -110,17 +105,6 @@ export const appRouter = router({
       .input(z.number().int().positive())
       .query(async ({ input }) => {
         const ticket = await getTicketById(input);
-        if (!ticket) return null;
-        return {
-          ...ticket,
-          price: ticket.price / 100,
-        };
-      }),
-
-    getByQRCode: publicProcedure
-      .input(z.string())
-      .query(async ({ input }) => {
-        const ticket = await getTicketByQRCode(input);
         if (!ticket) return null;
         return {
           ...ticket,
@@ -166,7 +150,7 @@ export const appRouter = router({
         await markTicketAsPrinted(input);
 
         await logAuditAction("print", "ticket", input, undefined, {
-          qrCode: ticket.qrCode,
+          ticketId: ticket.id,
         });
 
         return { success: true };
@@ -183,7 +167,7 @@ export const appRouter = router({
         await markTicketAsUsed(input);
 
         await logAuditAction("use", "ticket", input, undefined, {
-          qrCode: ticket.qrCode,
+          ticketId: ticket.id,
         });
 
         return { success: true };
