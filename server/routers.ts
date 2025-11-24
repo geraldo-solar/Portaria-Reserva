@@ -18,6 +18,8 @@ import {
   getSalesStats,
 } from "./db";
 import { v4 as uuidv4 } from "uuid";
+import { getDb } from "./db";
+import { ticketTypes } from "../drizzle/schema";
 
 export const appRouter = router({
   system: systemRouter,
@@ -193,6 +195,39 @@ export const appRouter = router({
         price: t.price / 100,
       }));
     }),
+
+    create: publicProcedure
+      .input(
+        z.object({
+          name: z.string().min(1, "Nome é obrigatório"),
+          description: z.string().optional(),
+          price: z.number().min(0, "Preço não pode ser negativo"),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) {
+          throw new Error("Database not available");
+        }
+
+        const priceInCents = Math.round(input.price * 100);
+
+        const result = await db.insert(ticketTypes).values({
+          name: input.name,
+          description: input.description || null,
+          price: priceInCents,
+        });
+
+        const newType = await listTicketTypes();
+        const created = newType[newType.length - 1];
+
+        return {
+          id: created.id,
+          name: created.name,
+          description: created.description,
+          price: created.price / 100,
+        };
+      }),
   }),
 
   reports: router({

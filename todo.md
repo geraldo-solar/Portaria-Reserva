@@ -76,3 +76,12 @@
 - [x] Atualizar paleta de cores para verde musgo, palha, areia, amarelo ouro
 - [x] Modificar tela de login com logo branca no background
 - [x] Simplificar venda de ingressos removendo cadastro de cliente
+
+
+## Novos Ajustes
+
+- [x] Criar API para cadastrar novos produtos
+- [x] Adicionar logomarca na página inicial
+- [x] Implementar impressão automática após venda
+- [x] Adicionar seleção de método de pagamento (dinheiro, pix, cartão)
+- [x] Implementar múltiplas vendas com impressão individual

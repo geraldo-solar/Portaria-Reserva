@@ -52,17 +52,17 @@ export default function Home() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-emerald-100">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 shadow-sm">
+      <header className="bg-white border-b border-emerald-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src={APP_LOGO} alt="Logo" className="w-10 h-10 rounded-lg" />
+            <img src={APP_LOGO} alt="Logo" className="w-12 h-12 rounded-lg shadow-md object-contain" />
             <div>
-              <h1 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">
+              <h1 className="text-2xl font-bold text-emerald-700">
                 {APP_TITLE}
               </h1>
-              <p className="text-xs text-gray-500">Sistema de Portaria de Eventos</p>
+              <p className="text-xs text-emerald-600">Sistema de Portaria de Eventos</p>
             </div>
           </div>
           <Button
@@ -78,9 +78,12 @@ export default function Home() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">Bem-vindo ao Sistema</h2>
-          <p className="text-gray-600">Escolha uma opção abaixo para começar</p>
+        <div className="mb-8 text-center">
+          <div className="flex justify-center mb-6">
+            <img src={APP_LOGO} alt="Logo" className="w-24 h-24 shadow-lg rounded-lg object-contain" />
+          </div>
+          <h2 className="text-3xl font-bold text-emerald-800 mb-2">Bem-vindo ao Sistema</h2>
+          <p className="text-emerald-700">Escolha uma opção abaixo para começar</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
