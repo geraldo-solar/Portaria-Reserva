@@ -285,6 +285,11 @@ export async function getSalesStats(startDate?: Date, endDate?: Date) {
     totalCancelled: 0,
     totalUsed: 0,
     totalActive: 0,
+    paymentMethods: {
+      dinheiro: { count: 0, total: 0 },
+      pix: { count: 0, total: 0 },
+      cartao: { count: 0, total: 0 },
+    },
   };
   
   allTickets.forEach((ticket) => {
@@ -294,8 +299,18 @@ export async function getSalesStats(startDate?: Date, endDate?: Date) {
       }
     }
     
-    stats.totalSales++;
-    stats.totalRevenue += ticket.price;
+    // Apenas contar vendas ativas (não canceladas)
+    if (ticket.status !== "cancelled") {
+      stats.totalSales++;
+      stats.totalRevenue += ticket.price;
+      
+      // Contar por método de pagamento
+      const paymentMethod = ticket.paymentMethod || "dinheiro";
+      if (paymentMethod === "dinheiro" || paymentMethod === "pix" || paymentMethod === "cartao") {
+        stats.paymentMethods[paymentMethod].count++;
+        stats.paymentMethods[paymentMethod].total += ticket.price;
+      }
+    }
     
     if (ticket.status === "cancelled") stats.totalCancelled++;
     else if (ticket.status === "used") stats.totalUsed++;

@@ -128,3 +128,10 @@
 ## Bug Crítico
 
 - [x] Investigar e corrigir botão de exclusão de produto (diálogo customizado implementado)
+
+
+## Impressão Térmica de Relatório
+
+- [x] Criar componente de pré-visualização de impressão térmica para relatório
+- [x] Substituir botão CSV por botão de impressão com modal de pré-visualização
+- [x] Implementar impressão automática após confirmação

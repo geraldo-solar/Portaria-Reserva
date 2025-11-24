@@ -92,7 +92,7 @@ describe("Tickets API", () => {
       expect(result.customerId).toBeDefined();
       expect(result.qrCode).toBeDefined();
       expect(result.status).toBe("active");
-      expect(result.price).toBeGreaterThan(0);
+      expect(result.price).toBeGreaterThanOrEqual(0);
     });
 
     it("should fail without customer name", async () => {

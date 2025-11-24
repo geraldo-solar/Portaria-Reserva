@@ -2,9 +2,10 @@ import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { ArrowLeft, Download, FileText } from "lucide-react";
+import { ArrowLeft, Printer, FileText } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useState } from "react";
+import ThermalReportPrinter from "@/components/ThermalReportPrinter";
 
 export default function Reports() {
   const [, setLocation] = useLocation();
@@ -12,6 +13,7 @@ export default function Reports() {
 
   const [startDate, setStartDate] = useState(today);
   const [endDate, setEndDate] = useState(today);
+  const [printDialogOpen, setPrintDialogOpen] = useState(false);
 
   const salesQuery = trpc.reports.sales.useQuery({
     startDate: new Date(startDate),
@@ -224,13 +226,12 @@ export default function Reports() {
               <CardHeader className="flex items-center justify-between">
                 <CardTitle>Detalhes das Vendas</CardTitle>
                 <Button
-                  onClick={handleExport}
-                  disabled={!salesQuery.data || salesQuery.data.length === 0}
-                  className="flex items-center gap-2"
-                  variant="outline"
+                  onClick={() => setPrintDialogOpen(true)}
+                  disabled={!salesQuery.data || salesQuery.data.length === 0 || !statsQuery.data}
+                  className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
                 >
-                  <Download size={16} />
-                  Exportar CSV
+                  <Printer size={16} />
+                  Imprimir Relatório
                 </Button>
               </CardHeader>
               <CardContent>
@@ -287,6 +288,23 @@ export default function Reports() {
           </>
         )}
       </main>
+
+      {/* Modal de Impressão */}
+      {statsQuery.data && (
+        <ThermalReportPrinter
+          open={printDialogOpen}
+          onClose={() => setPrintDialogOpen(false)}
+          reportData={{
+            startDate: startDate,
+            endDate: endDate,
+            totalSales: statsQuery.data.totalSales,
+            totalRevenue: statsQuery.data.totalRevenue,
+            activeTickets: statsQuery.data.totalActive,
+            cancelledTickets: statsQuery.data.totalCancelled,
+            paymentMethods: statsQuery.data.paymentMethods,
+          }}
+        />
+      )}
     </div>
   );
 }
