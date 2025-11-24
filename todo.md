@@ -150,3 +150,9 @@
 ## Bug no Relatório
 
 - [x] Corrigir valores por método de pagamento que não correspondem aos lançamentos
+
+
+## Melhoria no Relatório de Vendas
+
+- [x] Adicionar coluna "Produto" (nome do tipo de ingresso) na tabela
+- [x] Adicionar coluna "Forma de Pagamento" na tabela

@@ -243,7 +243,9 @@ export default function Reports() {
                       <thead className="bg-gray-50 border-b border-gray-200">
                         <tr>
                           <th className="px-4 py-2 text-left font-semibold text-gray-700">ID</th>
+                          <th className="px-4 py-2 text-left font-semibold text-gray-700">Produto</th>
                           <th className="px-4 py-2 text-left font-semibold text-gray-700">Preço</th>
+                          <th className="px-4 py-2 text-left font-semibold text-gray-700">Pagamento</th>
                           <th className="px-4 py-2 text-left font-semibold text-gray-700">Status</th>
                           <th className="px-4 py-2 text-left font-semibold text-gray-700">Data</th>
                         </tr>
@@ -252,8 +254,14 @@ export default function Reports() {
                         {salesQuery.data.map((ticket) => (
                           <tr key={ticket.id} className="border-b border-gray-200 hover:bg-gray-50">
                             <td className="px-4 py-2 text-gray-900">#{ticket.id}</td>
+                            <td className="px-4 py-2 text-gray-700">
+                              {ticket.ticketTypeName || "N/A"}
+                            </td>
                             <td className="px-4 py-2 text-gray-900 font-semibold">
                               R$ {ticket.price.toFixed(2)}
+                            </td>
+                            <td className="px-4 py-2 text-gray-700 capitalize">
+                              {ticket.paymentMethod || "N/A"}
                             </td>
                             <td className="px-4 py-2">
                               <span

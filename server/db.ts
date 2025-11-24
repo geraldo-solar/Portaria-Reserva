@@ -166,11 +166,30 @@ export async function listTickets(filters?: {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
+  // Fazer JOIN com ticketTypes para obter o nome do produto
+  const result = await db
+    .select({
+      id: tickets.id,
+      customerId: tickets.customerId,
+      ticketTypeId: tickets.ticketTypeId,
+      ticketTypeName: ticketTypes.name,
+      price: tickets.price,
+      status: tickets.status,
+      qrCode: tickets.qrCode,
+      paymentMethod: tickets.paymentMethod,
+      createdAt: tickets.createdAt,
+      cancelledAt: tickets.cancelledAt,
+      cancellationReason: tickets.cancellationReason,
+      printedAt: tickets.printedAt,
+    })
+    .from(tickets)
+    .leftJoin(ticketTypes, eq(tickets.ticketTypeId, ticketTypes.id));
+  
   if (filters?.status) {
-    return await db.select().from(tickets).where(eq(tickets.status, filters.status as any));
+    return result.filter(t => t.status === filters.status);
   }
   
-  return await db.select().from(tickets);
+  return result;
 }
 
 /**
@@ -258,10 +277,24 @@ export async function getSalesReport(startDate: Date, endDate: Date) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
-  // Retorna todos os ingressos ativos criados no período
+  // Retorna todos os ingressos criados no período com nome do produto
   const result = await db
-    .select()
+    .select({
+      id: tickets.id,
+      customerId: tickets.customerId,
+      ticketTypeId: tickets.ticketTypeId,
+      ticketTypeName: ticketTypes.name,
+      price: tickets.price,
+      status: tickets.status,
+      qrCode: tickets.qrCode,
+      paymentMethod: tickets.paymentMethod,
+      createdAt: tickets.createdAt,
+      cancelledAt: tickets.cancelledAt,
+      cancellationReason: tickets.cancellationReason,
+      printedAt: tickets.printedAt,
+    })
     .from(tickets)
+    .leftJoin(ticketTypes, eq(tickets.ticketTypeId, ticketTypes.id))
     .where(
       sql`${tickets.createdAt} >= ${startDate} AND ${tickets.createdAt} <= ${endDate}`
     );
