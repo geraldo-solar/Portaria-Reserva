@@ -92,3 +92,10 @@
 - [x] Remover Dashboard do menu principal
 - [x] Integrar cadastro de produtos com listagem em venda
 - [x] Corrigir background da logomarca para verde musgo
+
+
+## Correções de Bugs
+
+- [x] Corrigir botão gerar relatório
+- [x] Implementar funcionalidade de excluir produto
+- [x] Corrigir background da logomarca (fundo branco não exibe logo branca)

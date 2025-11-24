@@ -18,6 +18,7 @@ export default function ManageProducts() {
 
   const ticketTypesQuery = trpc.ticketTypes.list.useQuery();
   const createTicketTypeMutation = trpc.ticketTypes.create.useMutation();
+  const deleteTicketTypeMutation = trpc.ticketTypes.delete.useMutation();
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -212,7 +213,17 @@ export default function ManageProducts() {
                             variant="ghost"
                             size="sm"
                             className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                            disabled
+                            onClick={async () => {
+                              if (confirm(`Tem certeza que deseja excluir "${product.name}"?`)) {
+                                try {
+                                  await deleteTicketTypeMutation.mutateAsync(product.id);
+                                  ticketTypesQuery.refetch();
+                                } catch (err) {
+                                  alert("Erro ao excluir produto");
+                                }
+                              }
+                            }}
+                            disabled={deleteTicketTypeMutation.isPending}
                           >
                             <Trash2 size={16} />
                           </Button>

@@ -30,6 +30,8 @@ export default function Reports() {
 
   const handleSearch = () => {
     setHasSearched(true);
+    salesQuery.refetch();
+    statsQuery.refetch();
   };
 
   const handleExport = () => {
@@ -62,9 +64,9 @@ export default function Reports() {
     .split("T")[0];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 to-emerald-100">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 shadow-sm">
+      <header className="bg-white border-b border-emerald-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Button
@@ -114,9 +116,9 @@ export default function Reports() {
                 <Button
                   onClick={handleSearch}
                   disabled={salesQuery.isPending}
-                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+                  className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
                 >
-                  Gerar Relatório
+                  {salesQuery.isPending ? "Gerando..." : "Gerar Relatório"}
                 </Button>
               </div>
             </div>

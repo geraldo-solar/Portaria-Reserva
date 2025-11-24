@@ -51,7 +51,9 @@ export default function Home() {
       <header className="bg-white border-b border-emerald-200 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src={APP_LOGO} alt="Logo" className="w-12 h-12 rounded-lg shadow-md object-contain" />
+            <div className="bg-emerald-700 p-2 rounded-lg shadow-md">
+              <img src={APP_LOGO} alt="Logo" className="w-8 h-8 object-contain" />
+            </div>
             <div>
               <h1 className="text-2xl font-bold text-emerald-700">
                 {APP_TITLE}

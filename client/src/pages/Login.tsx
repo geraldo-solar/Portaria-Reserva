@@ -46,7 +46,9 @@ export default function Login() {
       <Card className="w-full max-w-md shadow-2xl relative z-10 bg-white">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <img src={APP_LOGO} alt="Logo" className="w-20 h-20 rounded-lg shadow-md" />
+            <div className="bg-emerald-700 p-3 rounded-lg shadow-md">
+              <img src={APP_LOGO} alt="Logo" className="w-20 h-20 object-contain" />
+            </div>
           </div>
           <CardTitle className="text-3xl font-bold text-emerald-700">
             {APP_TITLE}

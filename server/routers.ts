@@ -3,6 +3,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
+import { eq } from "drizzle-orm";
 import {
   createCustomer,
   listTicketTypes,
@@ -227,6 +228,19 @@ export const appRouter = router({
           description: created.description,
           price: created.price / 100,
         };
+      }),
+
+    delete: publicProcedure
+      .input(z.number().int().positive())
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) {
+          throw new Error("Database not available");
+        }
+
+        await db.delete(ticketTypes).where(eq(ticketTypes.id, input));
+
+        return { success: true };
       }),
   }),
 
