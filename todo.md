@@ -222,3 +222,8 @@
 - [x] Verificar queries de busca de dados para o relatório
 - [x] Corrigir inconsistências entre vendas realizadas e dados exibidos
 - [x] Validar que todos os dados são exibidos corretamente
+
+
+## Remoção de Resumo de Vendas da Página Inicial
+
+- [x] Remover cards de estatísticas (Ingressos Vendidos, Receita Total, Cancelamentos) da página inicial

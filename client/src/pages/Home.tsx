@@ -1,7 +1,7 @@
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart3, FileText, LogOut, Ticket, XCircle, Plus } from "lucide-react";
+import { FileText, LogOut, Ticket, XCircle, Plus } from "lucide-react";
 import { APP_LOGO, APP_TITLE } from "@/const";
 
 export default function Home() {
@@ -108,39 +108,6 @@ export default function Home() {
               </Card>
             );
           })}
-        </div>
-
-        {/* Info Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
-          <Card className="bg-blue-50 border-blue-200">
-            <CardHeader>
-              <CardTitle className="text-blue-900">Ingressos Vendidos</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-3xl font-bold text-blue-600">-</p>
-              <p className="text-sm text-blue-700 mt-2">Carregando dados...</p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-green-50 border-green-200">
-            <CardHeader>
-              <CardTitle className="text-green-900">Receita Total</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-3xl font-bold text-green-600">R$ -</p>
-              <p className="text-sm text-green-700 mt-2">Carregando dados...</p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-orange-50 border-orange-200">
-            <CardHeader>
-              <CardTitle className="text-orange-900">Cancelamentos</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-3xl font-bold text-orange-600">-</p>
-              <p className="text-sm text-orange-700 mt-2">Carregando dados...</p>
-            </CardContent>
-          </Card>
         </div>
       </main>
     </div>
