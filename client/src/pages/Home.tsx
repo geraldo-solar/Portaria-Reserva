@@ -1,7 +1,7 @@
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart3, FileText, LogOut, Ticket, XCircle } from "lucide-react";
+import { BarChart3, FileText, LogOut, Ticket, XCircle, Plus } from "lucide-react";
 import { APP_LOGO, APP_TITLE } from "@/const";
 
 export default function Home() {
@@ -41,6 +41,13 @@ export default function Home() {
       icon: FileText,
       href: "/reports",
       color: "from-green-600 to-emerald-600",
+    },
+    {
+      title: "Cadastro de Produtos",
+      description: "Gerenciar tipos de ingressos",
+      icon: Plus,
+      href: "/products",
+      color: "from-indigo-600 to-purple-600",
     },
   ];
 

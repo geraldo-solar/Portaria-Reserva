@@ -60,3 +60,12 @@
 - [x] Testes de fluxo de venda
 - [x] Testes de cancelamento
 - [x] Testes de relatórios
+
+
+## Ajustes Solicitados
+
+- [x] Copiar logomarca para assets
+- [x] Trocar nome para "Portaria Reserva Solar"
+- [x] Criar página de cadastro de produtos (tipos de ingressos)
+- [x] Adicionar botão voltar em todas as páginas
+- [x] Tornar justificativa obrigatória no cancelamento

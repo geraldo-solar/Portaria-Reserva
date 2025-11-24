@@ -2,10 +2,12 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { AlertCircle, CheckCircle, XCircle } from "lucide-react";
+import { AlertCircle, CheckCircle, XCircle, ArrowLeft } from "lucide-react";
+import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 
 export default function CancelTicket() {
+  const [, setLocation] = useLocation();
   const [ticketId, setTicketId] = useState("");
   const [reason, setReason] = useState("");
   const [error, setError] = useState("");
@@ -48,7 +50,22 @@ export default function CancelTicket() {
   };
 
   return (
-    <div className="space-y-6">
+    <>
+      {/* Header com botão voltar */}
+      <div className="bg-white border-b border-gray-200 shadow-sm mb-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <Button
+            onClick={() => setLocation("/")}
+            variant="ghost"
+            size="sm"
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft size={16} />
+            Voltar
+          </Button>
+        </div>
+      </div>
+      <div className="space-y-6">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Formulário de Busca */}
         <div className="lg:col-span-2">
@@ -98,15 +115,19 @@ export default function CancelTicket() {
                 <>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Motivo do Cancelamento *
+                      Justificativa do Cancelamento * (Obrigatória)
                     </label>
                     <textarea
-                      placeholder="Explique o motivo do cancelamento"
+                      placeholder="Explique detalhadamente o motivo do cancelamento"
                       value={reason}
                       onChange={(e) => setReason(e.target.value)}
                       className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                       rows={3}
+                      required
                     />
+                    {!reason && (
+                      <p className="text-xs text-red-600 mt-1">A justificativa é obrigatória para cancelar</p>
+                    )}
                   </div>
 
                   {error && (
@@ -118,8 +139,8 @@ export default function CancelTicket() {
 
                   <Button
                     onClick={handleCancel}
-                    disabled={!reason || cancelMutation.isPending}
-                    className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold"
+                    disabled={!reason || reason.trim().length === 0 || cancelMutation.isPending}
+                    className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {cancelMutation.isPending ? "Cancelando..." : "Confirmar Cancelamento"}
                   </Button>
@@ -161,5 +182,6 @@ export default function CancelTicket() {
         )}
       </div>
     </div>
+    </>
   );
 }

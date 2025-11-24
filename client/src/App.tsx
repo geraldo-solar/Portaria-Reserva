@@ -10,6 +10,7 @@ import SellTicket from "./pages/SellTicket";
 import CancelTicket from "./pages/CancelTicket";
 import Dashboard from "./pages/Dashboard";
 import Reports from "./pages/Reports";
+import ManageProducts from "./pages/ManageProducts";
 import { useEffect, useState } from "react";
 
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
@@ -43,6 +44,7 @@ function Router() {
       <Route path={"/cancel"} component={() => <ProtectedRoute component={CancelTicket} />} />
       <Route path={"/dashboard"} component={() => <ProtectedRoute component={Dashboard} />} />
       <Route path={"/reports"} component={() => <ProtectedRoute component={Reports} />} />
+      <Route path={"/products"} component={() => <ProtectedRoute component={ManageProducts} />} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

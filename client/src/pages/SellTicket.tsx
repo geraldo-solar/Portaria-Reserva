@@ -3,11 +3,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AlertCircle, CheckCircle, Printer } from "lucide-react";
+import { AlertCircle, CheckCircle, Printer, ArrowLeft } from "lucide-react";
+import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { ThermalTicketPrinter } from "@/components/ThermalTicketPrinter";
 
 export default function SellTicket() {
+  const [, setLocation] = useLocation();
   const [formData, setFormData] = useState({
     customerName: "",
     customerEmail: "",
@@ -81,6 +83,20 @@ export default function SellTicket() {
           {setTimeout(() => setShouldPrint(false), 2000)}
         </>
       )}
+      {/* Header com botão voltar */}
+      <div className="bg-white border-b border-gray-200 shadow-sm mb-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <Button
+            onClick={() => setLocation("/")}
+            variant="ghost"
+            size="sm"
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft size={16} />
+            Voltar
+          </Button>
+        </div>
+      </div>
       <div className="space-y-6">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Formulário de Venda */}
