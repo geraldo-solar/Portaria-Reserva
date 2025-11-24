@@ -285,7 +285,7 @@ export async function getSalesReport(startDate: Date, endDate: Date) {
     .from(tickets)
     .leftJoin(ticketTypes, eq(tickets.ticketTypeId, ticketTypes.id))
     .where(
-      sql`${tickets.createdAt} >= ${startDate} AND ${tickets.createdAt} <= ${endDate}`
+      sql`${tickets.createdAt} >= ${startDate.toISOString()} AND ${tickets.createdAt} <= ${endDate.toISOString()}`
     );
   
   return result;
@@ -298,48 +298,89 @@ export async function getSalesStats(startDate?: Date, endDate?: Date) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
-  // Contar ingressos por status
-  const allTickets = await db.select().from(tickets);
+  // Buscar ingressos filtrados por data na query SQL
+  let query = db.select().from(tickets);
   
-  const stats = {
-    totalSales: 0,
-    totalRevenue: 0,
-    totalCancelled: 0,
-    totalUsed: 0,
-    totalActive: 0,
-    paymentMethods: {
-      dinheiro: { count: 0, total: 0 },
-      pix: { count: 0, total: 0 },
-      cartao: { count: 0, total: 0 },
-    },
-  };
-  
-  allTickets.forEach((ticket) => {
-    if (startDate && endDate) {
-      if (ticket.createdAt < startDate || ticket.createdAt > endDate) {
-        return;
-      }
-    }
+  // Aplicar filtro de data na query SQL se fornecido
+  if (startDate && endDate) {
+    const allTickets = await db
+      .select()
+      .from(tickets)
+      .where(
+        sql`${tickets.createdAt} >= ${startDate.toISOString()} AND ${tickets.createdAt} <= ${endDate.toISOString()}`
+      );
     
-    // Apenas contar vendas ativas (não canceladas)
-    if (ticket.status !== "cancelled") {
-      stats.totalSales++;
-      stats.totalRevenue += ticket.price;
+    const stats = {
+      totalSales: 0,
+      totalRevenue: 0,
+      totalCancelled: 0,
+      totalUsed: 0,
+      totalActive: 0,
+      paymentMethods: {
+        dinheiro: { count: 0, total: 0 },
+        pix: { count: 0, total: 0 },
+        cartao: { count: 0, total: 0 },
+      },
+    };
+    
+    allTickets.forEach((ticket) => {
+      // Apenas contar vendas ativas (não canceladas)
+      if (ticket.status !== "cancelled") {
+        stats.totalSales++;
+        stats.totalRevenue += ticket.price;
+        
+        // Contar por método de pagamento
+        const paymentMethod = ticket.paymentMethod || "dinheiro";
+        if (paymentMethod === "dinheiro" || paymentMethod === "pix" || paymentMethod === "cartao") {
+          stats.paymentMethods[paymentMethod].count++;
+          stats.paymentMethods[paymentMethod].total += ticket.price;
+        }
+      }
       
-      // Contar por método de pagamento
-      const paymentMethod = ticket.paymentMethod || "dinheiro";
-      if (paymentMethod === "dinheiro" || paymentMethod === "pix" || paymentMethod === "cartao") {
-        stats.paymentMethods[paymentMethod].count++;
-        stats.paymentMethods[paymentMethod].total += ticket.price;
-      }
-    }
+      if (ticket.status === "cancelled") stats.totalCancelled++;
+      else if (ticket.status === "used") stats.totalUsed++;
+      else if (ticket.status === "active") stats.totalActive++;
+    });
     
-    if (ticket.status === "cancelled") stats.totalCancelled++;
-    else if (ticket.status === "used") stats.totalUsed++;
-    else if (ticket.status === "active") stats.totalActive++;
-  });
-  
-  return stats;
+    return stats;
+  } else {
+    // Sem filtro de data, buscar todos
+    const allTickets = await query;
+    
+    const stats = {
+      totalSales: 0,
+      totalRevenue: 0,
+      totalCancelled: 0,
+      totalUsed: 0,
+      totalActive: 0,
+      paymentMethods: {
+        dinheiro: { count: 0, total: 0 },
+        pix: { count: 0, total: 0 },
+        cartao: { count: 0, total: 0 },
+      },
+    };
+    
+    allTickets.forEach((ticket) => {
+      // Apenas contar vendas ativas (não canceladas)
+      if (ticket.status !== "cancelled") {
+        stats.totalSales++;
+        stats.totalRevenue += ticket.price;
+        
+        // Contar por método de pagamento
+        const paymentMethod = ticket.paymentMethod || "dinheiro";
+        if (paymentMethod === "dinheiro" || paymentMethod === "pix" || paymentMethod === "cartao") {
+          stats.paymentMethods[paymentMethod].count++;
+          stats.paymentMethods[paymentMethod].total += ticket.price;
+        }
+      }
+      
+      if (ticket.status === "cancelled") stats.totalCancelled++;
+      else if (ticket.status === "used") stats.totalUsed++;
+      else if (ticket.status === "active") stats.totalActive++;
+    });
+    
+    return stats;
+  }
 }
 
 

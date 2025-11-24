@@ -16,12 +16,12 @@ export default function Reports() {
   const [printDialogOpen, setPrintDialogOpen] = useState(false);
 
   const salesQuery = trpc.reports.sales.useQuery({
-    startDate: new Date(startDate),
+    startDate: new Date(startDate + "T00:00:00"),
     endDate: new Date(endDate + "T23:59:59"),
   });
 
   const statsQuery = trpc.reports.stats.useQuery({
-    startDate: new Date(startDate),
+    startDate: new Date(startDate + "T00:00:00"),
     endDate: new Date(endDate + "T23:59:59"),
   });
 

@@ -1,0 +1,42 @@
+{
+  "query": "SELECT id, price, paymentMethod, status, createdAt, DATE(createdAt) as date_only FROM tickets ORDER BY createdAt DESC LIMIT 5;",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3n1YGayndjafiFC.root --database WT6LGvFNLtRJMrhLS8Vdbi --execute SELECT id, price, paymentMethod, status, createdAt, DATE(createdAt) as date_only FROM tickets ORDER BY createdAt DESC LIMIT 5;",
+  "rows": [
+    {
+      "id": "540023",
+      "price": "5000",
+      "paymentMethod": "pix",
+      "status": "active",
+      "createdAt": "2025-11-24 22:15:20",
+      "date_only": "2025-11-24"
+    },
+    {
+      "id": "540021",
+      "price": "4000",
+      "paymentMethod": "dinheiro",
+      "status": "active",
+      "createdAt": "2025-11-24 22:11:52",
+      "date_only": "2025-11-24"
+    },
+    {
+      "id": "540022",
+      "price": "4000",
+      "paymentMethod": "dinheiro",
+      "status": "active",
+      "createdAt": "2025-11-24 22:11:52",
+      "date_only": "2025-11-24"
+    },
+    {
+      "id": "540020",
+      "price": "4000",
+      "paymentMethod": "dinheiro",
+      "status": "active",
+      "createdAt": "2025-11-24 22:09:08",
+      "date_only": "2025-11-24"
+    }
+  ],
+  "messages": [],
+  "stdout": "id\tprice\tpaymentMethod\tstatus\tcreatedAt\tdate_only\n540023\t5000\tpix\tactive\t2025-11-24 22:15:20\t2025-11-24\n540021\t4000\tdinheiro\tactive\t2025-11-24 22:11:52\t2025-11-24\n540022\t4000\tdinheiro\tactive\t2025-11-24 22:11:52\t2025-11-24\n540020\t4000\tdinheiro\tactive\t2025-11-24 22:09:08\t2025-11-24\n",
+  "stderr": "",
+  "execution_time_ms": 49
+}

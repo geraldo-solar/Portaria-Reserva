@@ -214,3 +214,11 @@
 - [x] Remover seletor de pagamento individual por produto
 - [x] Adicionar seletor único de pagamento para todo o carrinho
 - [x] Aplicar mesma forma de pagamento para todos os ingressos da venda
+
+
+## Correção de Relatório
+
+- [x] Investigar por que vendas não aparecem fielmente no relatório
+- [x] Verificar queries de busca de dados para o relatório
+- [x] Corrigir inconsistências entre vendas realizadas e dados exibidos
+- [x] Validar que todos os dados são exibidos corretamente
