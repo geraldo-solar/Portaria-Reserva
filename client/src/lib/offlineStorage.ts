@@ -2,9 +2,10 @@
  * Gerenciamento de armazenamento offline usando IndexedDB
  */
 
-const DB_NAME = 'portaria-eventos-db';
-const DB_VERSION = 1;
-const STORE_NAME = 'offline-sales';
+const DB_NAME = 'portaria_offline';
+const DB_VERSION = 2;
+const STORE_NAME = 'offline_sales';
+const TICKET_TYPES_STORE = 'ticket_types';
 
 export interface OfflineSale {
   id?: number;
@@ -31,7 +32,7 @@ function openDB(): Promise<IDBDatabase> {
     request.onupgradeneeded = (event) => {
       const db = (event.target as IDBOpenDBRequest).result;
 
-      // Criar object store se não existir
+      // Criar object store para vendas offline
       if (!db.objectStoreNames.contains(STORE_NAME)) {
         const store = db.createObjectStore(STORE_NAME, {
           keyPath: 'id',
@@ -39,6 +40,13 @@ function openDB(): Promise<IDBDatabase> {
         });
         store.createIndex('synced', 'synced', { unique: false });
         store.createIndex('timestamp', 'timestamp', { unique: false });
+      }
+
+      // Criar object store para tipos de ingressos (cache)
+      if (!db.objectStoreNames.contains(TICKET_TYPES_STORE)) {
+        db.createObjectStore(TICKET_TYPES_STORE, {
+          keyPath: 'id',
+        });
       }
     };
   });
@@ -154,6 +162,150 @@ export async function cleanOldSyncedSales(): Promise<void> {
       }
     };
 
+    request.onerror = () => reject(request.error);
+  });
+}
+
+
+// ===== CACHE DE TIPOS DE INGRESSOS =====
+
+export interface CachedTicketType {
+  id: number;
+  name: string;
+  price: number;
+  description: string | null;
+  active: boolean;
+  cachedAt: number;
+}
+
+// Salvar tipos de ingressos no cache
+export async function cacheTicketTypes(ticketTypes: Omit<CachedTicketType, 'cachedAt'>[]): Promise<void> {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([TICKET_TYPES_STORE], 'readwrite');
+    const store = transaction.objectStore(TICKET_TYPES_STORE);
+
+    // Limpar cache antigo
+    store.clear();
+
+    // Adicionar novos dados
+    const cachedAt = Date.now();
+    for (const ticketType of ticketTypes) {
+      store.put({ ...ticketType, cachedAt });
+    }
+
+    transaction.oncomplete = () => resolve();
+    transaction.onerror = () => reject(transaction.error);
+  });
+}
+
+// Obter tipos de ingressos do cache
+export async function getCachedTicketTypes(): Promise<CachedTicketType[]> {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([TICKET_TYPES_STORE], 'readonly');
+    const store = transaction.objectStore(TICKET_TYPES_STORE);
+    const request = store.getAll();
+
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+// Verificar se cache de tipos de ingressos está atualizado (menos de 1 hora)
+export async function isTicketTypesCacheValid(): Promise<boolean> {
+  const cached = await getCachedTicketTypes();
+  if (cached.length === 0) return false;
+
+  const oneHourAgo = Date.now() - 60 * 60 * 1000;
+  return cached[0]?.cachedAt > oneHourAgo;
+}
+
+
+// ===== CACHE DE RELATÓRIOS =====
+
+const REPORTS_CACHE_STORE = 'reports_cache';
+
+export interface CachedReportData {
+  stats: {
+    totalRevenue: number;
+    paymentMethods: {
+      dinheiro: { count: number; total: number };
+      pix: { count: number; total: number };
+      cartao: { count: number; total: number };
+    };
+    totalSales: number;
+    totalCancelled: number;
+    totalUsed: number;
+    totalActive: number;
+  };
+  sales: Array<{
+    id: number;
+    ticketTypeName: string | null;
+    price: number;
+    paymentMethod: string;
+    status: string;
+    createdAt: Date;
+  }>;
+  cachedAt: number;
+}
+
+// Salvar dados de relatório no cache
+export async function cacheReportData(data: Omit<CachedReportData, 'cachedAt'>): Promise<void> {
+  const db = await openDB();
+  
+  // Verificar se a store existe, senão criar
+  if (!db.objectStoreNames.contains(REPORTS_CACHE_STORE)) {
+    db.close();
+    // Incrementar versão e recriar
+    const newDb = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open(DB_NAME, DB_VERSION + 1);
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => resolve(request.result);
+      request.onupgradeneeded = (event) => {
+        const db = (event.target as IDBOpenDBRequest).result;
+        if (!db.objectStoreNames.contains(REPORTS_CACHE_STORE)) {
+          db.createObjectStore(REPORTS_CACHE_STORE);
+        }
+      };
+    });
+    
+    return new Promise((resolve, reject) => {
+      const transaction = newDb.transaction([REPORTS_CACHE_STORE], 'readwrite');
+      const store = transaction.objectStore(REPORTS_CACHE_STORE);
+      const cachedData: CachedReportData = { ...data, cachedAt: Date.now() };
+      const request = store.put(cachedData, 'latest');
+      
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  }
+  
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([REPORTS_CACHE_STORE], 'readwrite');
+    const store = transaction.objectStore(REPORTS_CACHE_STORE);
+    const cachedData: CachedReportData = { ...data, cachedAt: Date.now() };
+    const request = store.put(cachedData, 'latest');
+    
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error);
+  });
+}
+
+// Obter dados de relatório do cache
+export async function getCachedReportData(): Promise<CachedReportData | null> {
+  const db = await openDB();
+  
+  if (!db.objectStoreNames.contains(REPORTS_CACHE_STORE)) {
+    return null;
+  }
+  
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction([REPORTS_CACHE_STORE], 'readonly');
+    const store = transaction.objectStore(REPORTS_CACHE_STORE);
+    const request = store.get('latest');
+    
+    request.onsuccess = () => resolve(request.result || null);
     request.onerror = () => reject(request.error);
   });
 }

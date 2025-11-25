@@ -14,8 +14,11 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ArrowLeft, Printer, FileText, XCircle } from "lucide-react";
 import { trpc } from "@/lib/trpc";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import ThermalReportPrinter from "@/components/ThermalReportPrinter";
+import { useOfflineSync } from "@/hooks/useOfflineSync";
+import { cacheReportData, getCachedReportData, type CachedReportData } from "@/lib/offlineStorage";
+import { WifiOff } from "lucide-react";
 
 export default function Reports() {
   const [, setLocation] = useLocation();
@@ -26,6 +29,10 @@ export default function Reports() {
   const [printDialogOpen, setPrintDialogOpen] = useState(false);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [ticketToCancel, setTicketToCancel] = useState<number | null>(null);
+  const [cachedData, setCachedData] = useState<CachedReportData | null>(null);
+  const [usingCache, setUsingCache] = useState(false);
+
+  const { isOnline } = useOfflineSync();
 
   const cancelMutation = trpc.tickets.cancel.useMutation({
     onSuccess: () => {
@@ -47,15 +54,50 @@ export default function Reports() {
     }
   };
 
-  const salesQuery = trpc.reports.sales.useQuery({
-    startDate: new Date(startDate + "T00:00:00"),
-    endDate: new Date(endDate + "T23:59:59"),
-  });
+  const salesQuery = trpc.reports.sales.useQuery(
+    {
+      startDate: new Date(startDate + "T00:00:00"),
+      endDate: new Date(endDate + "T23:59:59"),
+    },
+    {
+      enabled: isOnline, // Só buscar quando online
+    }
+  );
 
-  const statsQuery = trpc.reports.stats.useQuery({
-    startDate: new Date(startDate + "T00:00:00"),
-    endDate: new Date(endDate + "T23:59:59"),
-  });
+  const statsQuery = trpc.reports.stats.useQuery(
+    {
+      startDate: new Date(startDate + "T00:00:00"),
+      endDate: new Date(endDate + "T23:59:59"),
+    },
+    {
+      enabled: isOnline, // Só buscar quando online
+    }
+  );
+
+  // Carregar dados de relatório (online ou cache)
+  useEffect(() => {
+    async function loadReportData() {
+      if (isOnline && salesQuery.data && statsQuery.data) {
+        // Online: cachear dados
+        await cacheReportData({
+          sales: salesQuery.data,
+          stats: statsQuery.data,
+        });
+        setCachedData(null);
+        setUsingCache(false);
+      } else if (!isOnline) {
+        // Offline: usar cache
+        const cached = await getCachedReportData();
+        setCachedData(cached);
+        setUsingCache(cached !== null);
+      }
+    }
+    loadReportData();
+  }, [isOnline, salesQuery.data, statsQuery.data]);
+
+  // Determinar quais dados usar
+  const sales = usingCache && cachedData ? cachedData.sales : (salesQuery.data || []);
+  const stats = usingCache && cachedData ? cachedData.stats : statsQuery.data;
 
   const handleSearch = () => {
     salesQuery.refetch();
@@ -155,8 +197,21 @@ export default function Reports() {
           </CardContent>
         </Card>
 
-        {salesQuery.data && (
+        {(sales.length > 0 || usingCache) && (
           <>
+            {/* Indicador de cache */}
+            {usingCache && (
+              <div className="mb-4 p-4 bg-orange-50 border-2 border-orange-200 rounded-lg flex items-center gap-3">
+                <WifiOff className="text-orange-600" size={20} />
+                <div>
+                  <p className="font-semibold text-orange-900">Modo Offline</p>
+                  <p className="text-sm text-orange-700">
+                    Exibindo dados em cache. Conecte-se à internet para atualizar.
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Stats */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
               <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
@@ -165,7 +220,7 @@ export default function Reports() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-3xl font-bold text-purple-600">
-                    {statsQuery.data?.totalSales || 0}
+                    {stats?.totalSales || 0}
                   </p>
                 </CardContent>
               </Card>
@@ -176,7 +231,7 @@ export default function Reports() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-3xl font-bold text-green-600">
-                    R$ {(statsQuery.data?.totalRevenue || 0).toFixed(2)}
+                    R$ {(stats?.totalRevenue || 0).toFixed(2)}
                   </p>
                 </CardContent>
               </Card>
@@ -187,7 +242,7 @@ export default function Reports() {
                 </CardHeader>
                 <CardContent>
                   <p className="text-3xl font-bold text-red-600">
-                    {statsQuery.data?.totalCancelled || 0}
+                    {stats?.totalCancelled || 0}
                   </p>
                 </CardContent>
               </Card>
@@ -204,39 +259,39 @@ export default function Reports() {
                     <p className="text-sm text-gray-600 mb-1">💵 Dinheiro</p>
                     <p className="text-2xl font-bold text-emerald-700">
                       R$ {(
-                        salesQuery.data
-                          ?.filter((t) => t.paymentMethod === "dinheiro" && t.status === "active")
+                        sales
+                          .filter((t) => t.paymentMethod === "dinheiro" && t.status === "active")
                           .reduce((sum, t) => sum + t.price, 0) || 0
                       ).toFixed(2)}
                     </p>
                     <p className="text-xs text-gray-500 mt-1">
-                      {salesQuery.data?.filter((t) => t.paymentMethod === "dinheiro" && t.status === "active").length || 0} vendas
+                      {sales.filter((t) => t.paymentMethod === "dinheiro" && t.status === "active").length || 0} vendas
                     </p>
                   </div>
                   <div className="bg-white p-4 rounded-lg shadow-sm">
                     <p className="text-sm text-gray-600 mb-1">📱 PIX</p>
                     <p className="text-2xl font-bold text-emerald-700">
                       R$ {(
-                        salesQuery.data
-                          ?.filter((t) => t.paymentMethod === "pix" && t.status === "active")
+                        sales
+                          .filter((t) => t.paymentMethod === "pix" && t.status === "active")
                           .reduce((sum, t) => sum + t.price, 0) || 0
                       ).toFixed(2)}
                     </p>
                     <p className="text-xs text-gray-500 mt-1">
-                      {salesQuery.data?.filter((t) => t.paymentMethod === "pix" && t.status === "active").length || 0} vendas
+                      {sales.filter((t) => t.paymentMethod === "pix" && t.status === "active").length || 0} vendas
                     </p>
                   </div>
                   <div className="bg-white p-4 rounded-lg shadow-sm">
                     <p className="text-sm text-gray-600 mb-1">💳 Cartão</p>
                     <p className="text-2xl font-bold text-emerald-700">
                       R$ {(
-                        salesQuery.data
-                          ?.filter((t) => t.paymentMethod === "cartao" && t.status === "active")
+                        sales
+                          .filter((t) => t.paymentMethod === "cartao" && t.status === "active")
                           .reduce((sum, t) => sum + t.price, 0) || 0
                       ).toFixed(2)}
                     </p>
                     <p className="text-xs text-gray-500 mt-1">
-                      {salesQuery.data?.filter((t) => t.paymentMethod === "cartao" && t.status === "active").length || 0} vendas
+                      {sales.filter((t) => t.paymentMethod === "cartao" && t.status === "active").length || 0} vendas
                     </p>
                   </div>
                 </div>
@@ -249,7 +304,7 @@ export default function Reports() {
                 <CardTitle>Detalhes das Vendas</CardTitle>
                 <Button
                   onClick={() => setPrintDialogOpen(true)}
-                  disabled={!salesQuery.data || salesQuery.data.length === 0 || !statsQuery.data}
+                  disabled={sales.length === 0 || !stats}
                   className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white"
                 >
                   <Printer size={16} />
@@ -257,9 +312,9 @@ export default function Reports() {
                 </Button>
               </CardHeader>
               <CardContent>
-                {salesQuery.isPending ? (
+                {salesQuery.isPending && isOnline ? (
                   <p className="text-gray-500">Carregando...</p>
-                ) : salesQuery.data && salesQuery.data.length > 0 ? (
+                ) : sales.length > 0 ? (
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead className="bg-gray-50 border-b border-gray-200">
@@ -275,7 +330,7 @@ export default function Reports() {
                         </tr>
                       </thead>
                       <tbody>
-                        {salesQuery.data.map((ticket) => (
+                        {sales.map((ticket) => (
                           <tr key={ticket.id} className="border-b border-gray-200 hover:bg-gray-50">
                             <td className="px-4 py-2 text-gray-900">#{ticket.id}</td>
                             <td className="px-4 py-2 text-gray-700">

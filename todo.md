@@ -265,3 +265,13 @@
 - [x] Criar indicador visual de status online/offline
 - [x] Registrar service worker no index.html
 - [x] Testar funcionamento offline completo
+
+
+## Correção de Funcionalidade Offline
+
+- [x] Implementar cache local de tipos de ingressos (ticketTypes) no IndexedDB
+- [x] Adicionar fallback para carregar tipos de ingressos do cache quando offline
+- [x] Implementar cache de dados de relatórios para visualização offline
+- [x] Adicionar indicadores visuais de "dados em cache" nos relatórios offline
+- [x] Testar venda offline completa
+- [x] Testar visualização de relatórios offline

@@ -1,12 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AlertCircle, CheckCircle, ArrowLeft, Plus, Minus, Ticket } from "lucide-react";
+import { AlertCircle, CheckCircle, ArrowLeft, Plus, Minus, Ticket, WifiOff } from "lucide-react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { ThermalTicketPrinter } from "@/components/ThermalTicketPrinter";
-import { saveOfflineSale } from "@/lib/offlineStorage";
+import { saveOfflineSale, cacheTicketTypes, getCachedTicketTypes, type CachedTicketType } from "@/lib/offlineStorage";
 import { useOfflineSync } from "@/hooks/useOfflineSync";
 
 interface CartItem {
@@ -26,13 +26,44 @@ export default function SellTicket() {
   const [ticketsToPrint, setTicketsToPrint] = useState<any[]>([]);
   const [currentPrintIndex, setCurrentPrintIndex] = useState(0);
   const [showPrintModal, setShowPrintModal] = useState(false);
+  const [cachedTicketTypes, setCachedTicketTypes] = useState<CachedTicketType[]>([]);
+  const [usingCache, setUsingCache] = useState(false);
 
-  const ticketTypesQuery = trpc.ticketTypes.list.useQuery();
-  const createTicketMutation = trpc.tickets.create.useMutation();
   const { isOnline, updatePendingCount } = useOfflineSync();
+  const ticketTypesQuery = trpc.ticketTypes.list.useQuery(undefined, {
+    enabled: isOnline, // Só buscar quando online
+  });
+  const createTicketMutation = trpc.tickets.create.useMutation();
+
+  // Carregar tipos de ingressos (online ou cache)
+  useEffect(() => {
+    async function loadTicketTypes() {
+      if (isOnline && ticketTypesQuery.data) {
+        // Online: cachear dados e usar do servidor
+        await cacheTicketTypes(ticketTypesQuery.data.map(t => ({
+          id: t.id,
+          name: t.name,
+          price: t.price,
+          description: t.description,
+          active: true,
+        })));
+        setCachedTicketTypes([]);
+        setUsingCache(false);
+      } else if (!isOnline) {
+        // Offline: usar cache
+        const cached = await getCachedTicketTypes();
+        setCachedTicketTypes(cached);
+        setUsingCache(cached.length > 0);
+      }
+    }
+    loadTicketTypes();
+  }, [isOnline, ticketTypesQuery.data]);
+
+  // Determinar qual lista usar
+  const ticketTypes = usingCache ? cachedTicketTypes : (ticketTypesQuery.data || []);
 
   const handleSelectTicketType = (ticketTypeId: number) => {
-    const ticketType = ticketTypesQuery.data?.find((t) => t.id === ticketTypeId);
+    const ticketType = ticketTypes.find((t) => t.id === ticketTypeId);
     if (!ticketType) return;
 
     const existingItem = cart.find((item) => item.ticketTypeId === ticketTypeId);
@@ -179,11 +210,19 @@ export default function SellTicket() {
           <div className="lg:col-span-2">
             <Card>
               <CardHeader>
-                <CardTitle>Selecione os Ingressos</CardTitle>
+                <CardTitle className="flex items-center justify-between">
+                  <span>Selecione os Ingressos</span>
+                  {usingCache && (
+                    <span className="text-xs font-normal text-orange-600 flex items-center gap-1">
+                      <WifiOff size={14} />
+                      Dados em cache
+                    </span>
+                  )}
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {ticketTypesQuery.data?.map((ticketType) => (
+                  {ticketTypes.map((ticketType) => (
                     <button
                       key={ticketType.id}
                       onClick={() => handleSelectTicketType(ticketType.id)}
