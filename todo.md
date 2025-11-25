@@ -248,3 +248,8 @@
 - [x] Investigar por que o botão de cancelar no relatório não está funcionando
 - [x] Corrigir implementação do cancelamento
 - [x] Testar cancelamento via relatório
+
+
+## Remoção de Card de Utilizados no Relatório
+
+- [x] Remover card "Utilizados" da área de resumo do relatório

@@ -158,7 +158,7 @@ export default function Reports() {
         {salesQuery.data && (
           <>
             {/* Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
               <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
                 <CardHeader>
                   <CardTitle className="text-purple-900 text-sm">Total Vendido</CardTitle>
@@ -177,17 +177,6 @@ export default function Reports() {
                 <CardContent>
                   <p className="text-3xl font-bold text-green-600">
                     R$ {(statsQuery.data?.totalRevenue || 0).toFixed(2)}
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
-                <CardHeader>
-                  <CardTitle className="text-blue-900 text-sm">Utilizados</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-3xl font-bold text-blue-600">
-                    {statsQuery.data?.totalUsed || 0}
                   </p>
                 </CardContent>
               </Card>
