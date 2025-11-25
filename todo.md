@@ -283,3 +283,12 @@
 - [x] Corrigir lógica de salvamento offline na função handleSubmit
 - [x] Garantir que vendas offline apareçam no indicador de pendências
 - [x] Testar fluxo completo: venda offline → sincronização automática
+
+
+## Bug - Botões Invisíveis e Relatório Não Gera Offline
+
+- [x] Investigar por que botões ficam invisíveis quando offline
+- [x] Verificar condições de renderização (isPending, isLoading)
+- [x] Corrigir lógica de exibição de botões de produtos na venda
+- [x] Corrigir geração de relatório offline
+- [x] Testar interface completa em modo offline

@@ -100,19 +100,22 @@ export default function Reports() {
   const stats = usingCache && cachedData ? cachedData.stats : statsQuery.data;
 
   const handleSearch = () => {
-    salesQuery.refetch();
-    statsQuery.refetch();
+    if (isOnline) {
+      salesQuery.refetch();
+      statsQuery.refetch();
+    }
+    // Se offline, os dados em cache já estão sendo usados
   };
 
   const handleExport = () => {
-    if (!salesQuery.data || salesQuery.data.length === 0) {
+    if (sales.length === 0) {
       alert("Nenhum dado para exportar");
       return;
     }
 
     const csv = [
       ["ID", "Pre\u00e7o", "M\u00e9todo Pagamento", "Status", "Data", "Hor\u00e1rio"],
-      ...salesQuery.data.map((ticket) => [
+      ...sales.map((ticket) => [
         ticket.id,
         `R$ ${ticket.price.toFixed(2)}`,
         ticket.paymentMethod === "dinheiro" ? "Dinheiro" : ticket.paymentMethod === "pix" ? "PIX" : "Cart\u00e3o",
@@ -187,10 +190,10 @@ export default function Reports() {
               <div className="flex items-end">
                 <Button
                   onClick={handleSearch}
-                  disabled={salesQuery.isPending}
+                  disabled={salesQuery.isPending && isOnline}
                   className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
                 >
-                  {salesQuery.isPending ? "Gerando..." : "Gerar Relatório"}
+                  {salesQuery.isPending && isOnline ? "Gerando..." : usingCache ? "Exibir Cache" : "Gerar Relatório"}
                 </Button>
               </div>
             </div>
