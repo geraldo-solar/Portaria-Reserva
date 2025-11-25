@@ -253,3 +253,15 @@
 ## Remoção de Card de Utilizados no Relatório
 
 - [x] Remover card "Utilizados" da área de resumo do relatório
+
+
+## Implementação de PWA (Progressive Web App)
+
+- [x] Criar manifest.json com ícones e configurações do PWA
+- [x] Implementar service worker com cache offline-first
+- [x] Criar sistema de armazenamento local com IndexedDB
+- [x] Implementar fila de sincronização para dados offline
+- [x] Adicionar sincronização automática quando conexão voltar
+- [x] Criar indicador visual de status online/offline
+- [x] Registrar service worker no index.html
+- [x] Testar funcionamento offline completo

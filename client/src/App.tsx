@@ -4,6 +4,7 @@ import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { OfflineIndicator } from "./components/OfflineIndicator";
 import Login from "./pages/Login";
 import Home from "./pages/Home";
 import SellTicket from "./pages/SellTicket";
@@ -53,11 +54,26 @@ function Router() {
 }
 
 function App() {
+  // Registrar service worker
+  useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker
+        .register('/sw.js')
+        .then((registration) => {
+          console.log('[PWA] Service Worker registered:', registration);
+        })
+        .catch((error) => {
+          console.error('[PWA] Service Worker registration failed:', error);
+        });
+    }
+  }, []);
+
   return (
     <ErrorBoundary>
       <ThemeProvider defaultTheme="light">
         <TooltipProvider>
           <Toaster />
+          <OfflineIndicator />
           <Router />
         </TooltipProvider>
       </ThemeProvider>

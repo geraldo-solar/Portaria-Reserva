@@ -6,6 +6,8 @@ import { AlertCircle, CheckCircle, ArrowLeft, Plus, Minus, Ticket } from "lucide
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { ThermalTicketPrinter } from "@/components/ThermalTicketPrinter";
+import { saveOfflineSale } from "@/lib/offlineStorage";
+import { useOfflineSync } from "@/hooks/useOfflineSync";
 
 interface CartItem {
   ticketTypeId: number;
@@ -27,6 +29,7 @@ export default function SellTicket() {
 
   const ticketTypesQuery = trpc.ticketTypes.list.useQuery();
   const createTicketMutation = trpc.tickets.create.useMutation();
+  const { isOnline, updatePendingCount } = useOfflineSync();
 
   const handleSelectTicketType = (ticketTypeId: number) => {
     const ticketType = ticketTypesQuery.data?.find((t) => t.id === ticketTypeId);
@@ -92,18 +95,51 @@ export default function SellTicket() {
     try {
       const tickets: any[] = [];
 
-      for (const item of cart) {
-        for (let i = 0; i < item.quantity; i++) {
-          const ticket = await createTicketMutation.mutateAsync({
-            customerName: `Cliente ${Date.now()}`,
+      // Se estiver offline, salvar localmente
+      if (!isOnline) {
+        await saveOfflineSale({
+          timestamp: Date.now(),
+          items: cart.map(item => ({
             ticketTypeId: item.ticketTypeId,
+            quantity: item.quantity,
             paymentMethod: paymentMethod,
-          });
-          tickets.push(ticket);
+          })),
+          paymentMethod: paymentMethod,
+          synced: false,
+          syncAttempts: 0,
+        });
+
+        // Criar tickets simulados para impressão offline
+        for (const item of cart) {
+          for (let i = 0; i < item.quantity; i++) {
+            tickets.push({
+              id: Math.floor(Math.random() * 900000) + 100000, // ID temporário
+              ticketTypeId: item.ticketTypeId,
+              price: item.price,
+              status: 'active',
+              createdAt: new Date(),
+            });
+          }
         }
+
+        await updatePendingCount();
+        setSuccessMessage(`${tickets.length} ingresso(s) salvo(s) offline! Serão sincronizados quando a conexão voltar.`);
+      } else {
+        // Se estiver online, enviar para o servidor
+        for (const item of cart) {
+          for (let i = 0; i < item.quantity; i++) {
+            const ticket = await createTicketMutation.mutateAsync({
+              customerName: `Cliente ${Date.now()}`,
+              ticketTypeId: item.ticketTypeId,
+              paymentMethod: paymentMethod,
+            });
+            tickets.push(ticket);
+          }
+        }
+
+        setSuccessMessage(`${tickets.length} ingresso(s) vendido(s) com sucesso!`);
       }
 
-      setSuccessMessage(`${tickets.length} ingresso(s) vendido(s) com sucesso!`);
       setSuccess(true);
       setCart([]);
       setPaymentMethod("dinheiro");
