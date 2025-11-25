@@ -128,33 +128,47 @@ export default function SellTicket() {
 
       // Se estiver offline, salvar localmente
       if (!isOnline) {
-        await saveOfflineSale({
-          timestamp: Date.now(),
-          items: cart.map(item => ({
-            ticketTypeId: item.ticketTypeId,
-            quantity: item.quantity,
-            paymentMethod: paymentMethod,
-          })),
-          paymentMethod: paymentMethod,
-          synced: false,
-          syncAttempts: 0,
-        });
-
-        // Criar tickets simulados para impressão offline
-        for (const item of cart) {
-          for (let i = 0; i < item.quantity; i++) {
-            tickets.push({
-              id: Math.floor(Math.random() * 900000) + 100000, // ID temporário
+        console.log('[OFFLINE] Salvando venda offline...', { cart, paymentMethod });
+        
+        try {
+          const saleId = await saveOfflineSale({
+            timestamp: Date.now(),
+            items: cart.map(item => ({
               ticketTypeId: item.ticketTypeId,
-              price: item.price,
-              status: 'active',
-              createdAt: new Date(),
-            });
-          }
-        }
+              quantity: item.quantity,
+              paymentMethod: paymentMethod,
+            })),
+            paymentMethod: paymentMethod,
+            synced: false,
+            syncAttempts: 0,
+          });
+          
+          console.log('[OFFLINE] Venda salva com ID:', saleId);
 
-        await updatePendingCount();
-        setSuccessMessage(`${tickets.length} ingresso(s) salvo(s) offline! Serão sincronizados quando a conexão voltar.`);
+          // Criar tickets simulados para impressão offline
+          for (const item of cart) {
+            for (let i = 0; i < item.quantity; i++) {
+              tickets.push({
+                id: Math.floor(Math.random() * 900000) + 100000, // ID temporário
+                ticketTypeId: item.ticketTypeId,
+                ticketTypeName: item.ticketTypeName,
+                price: item.price,
+                paymentMethod: paymentMethod,
+                status: 'active',
+                createdAt: new Date(),
+              });
+            }
+          }
+
+          console.log('[OFFLINE] Tickets criados:', tickets.length);
+          await updatePendingCount();
+          console.log('[OFFLINE] Contador de pendências atualizado');
+          
+          setSuccessMessage(`✅ ${tickets.length} ingresso(s) salvo(s) offline! Serão sincronizados quando a conexão voltar.`);
+        } catch (offlineError) {
+          console.error('[OFFLINE] Erro ao salvar venda offline:', offlineError);
+          throw new Error(`Erro ao salvar offline: ${offlineError instanceof Error ? offlineError.message : 'Erro desconhecido'}`);
+        }
       } else {
         // Se estiver online, enviar para o servidor
         for (const item of cart) {

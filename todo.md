@@ -275,3 +275,11 @@
 - [x] Adicionar indicadores visuais de "dados em cache" nos relatórios offline
 - [x] Testar venda offline completa
 - [x] Testar visualização de relatórios offline
+
+
+## Bug - Lançamento Offline Não Funciona
+
+- [x] Investigar por que vendas offline não são salvas no IndexedDB
+- [x] Corrigir lógica de salvamento offline na função handleSubmit
+- [x] Garantir que vendas offline apareçam no indicador de pendências
+- [x] Testar fluxo completo: venda offline → sincronização automática
