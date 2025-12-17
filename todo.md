@@ -291,4 +291,15 @@
 - [x] Verificar condições de renderização (isPending, isLoading)
 - [x] Corrigir lógica de exibição de botões de produtos na venda
 - [x] Corrigir geração de relatório offline
-- [x] Testar interface completa em modo offline
+- [x] Testar interface completa em modo offline## Migração para GitHub + Vercel (Deploy Independente)
+
+- [x] Substituir autenticação Manus OAuth por autenticação local com PIN
+- [x] Remover dependências específicas da Manus (_core/oauth.ts, _core/env.ts)
+- [x] Criar sistema de sessão local com cookies httpOnly
+- [x] Ajustar variáveis de ambiente para padrão (.env.example)
+- [x] Configurar Drizzle para PostgreSQL (Vercel Postgres)
+- [x] Atualizar Service Worker para ser agnóstico de domínio
+- [x] Criar vercel.json com configurações de build e rotas
+- [x] Criar README.md com instruções de deploy
+- [x] Criar guia passo a passo de deploy (DEPLOY_GUIDE.md)
+- [x] Gerar pacote final com todos os arquivos standalone
