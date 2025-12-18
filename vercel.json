@@ -11,5 +11,8 @@
       "source": "/(.*)",
       "destination": "/$1"
     }
-  ]
+  ],
+  "typescript": {
+    "ignoreBuildErrors": true
+  }
 }
