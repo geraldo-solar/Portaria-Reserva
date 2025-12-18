@@ -1,4 +1,3 @@
-// Vercel Serverless Function Entry Point
 import express from "express";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { appRouter } from "../server/routers.js";
@@ -10,14 +9,20 @@ const app = express();
 app.use(express.json({ limit: "50mb" }));
 app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
-// tRPC API
-app.use(
-  "/api/trpc",
-  createExpressMiddleware({
-    router: appRouter,
-    createContext,
-  })
-);
+// Health check
+app.get("/api/health", (req, res) => {
+  res.json({ status: "ok", timestamp: new Date().toISOString() });
+});
 
-// Export for Vercel
+// tRPC API
+app.all("/api/trpc/*", createExpressMiddleware({
+  router: appRouter,
+  createContext,
+}));
+
+// Catch all other /api routes
+app.all("/api/*", (req, res) => {
+  res.status(404).json({ error: "API endpoint not found" });
+});
+
 export default app;

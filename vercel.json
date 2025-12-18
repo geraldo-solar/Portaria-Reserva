@@ -1,26 +1,11 @@
 {
   "version": 2,
-  "builds": [
+  "buildCommand": "pnpm build",
+  "outputDirectory": "dist",
+  "rewrites": [
     {
-      "src": "api/index.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist"
-      }
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/index.js"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/$1"
+      "source": "/api/:path*",
+      "destination": "/api"
     }
   ]
 }
