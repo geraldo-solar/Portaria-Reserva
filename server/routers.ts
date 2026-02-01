@@ -59,6 +59,13 @@ export const appRouter = router({
         };
       }),
 
+    debugCreate: publicProcedure
+      .input(z.any())
+      .mutation(async ({ input }) => {
+        console.log("[DebugCreate] Hit!", input);
+        return { success: true, message: "Server is alive and reachable" };
+      }),
+
     validate: publicProcedure
       .input(z.object({ token: z.string() }))
       .mutation(async ({ input }) => {
