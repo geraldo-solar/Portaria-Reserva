@@ -78,35 +78,20 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         try {
           console.log("[CreateProduct] Starting...", input);
-          const priceInCents = Math.round(input.price * 100);
+          // MOCK MODE: Bypass DB to confirm write-crash theory
+          // const priceInCents = Math.round(input.price * 100);
 
-          const result = await createTicketType({
-            name: input.name,
-            description: input.description || null,
-            price: priceInCents,
-          });
-
-          // Safe extraction
-          let insertId = 0;
-          if (Array.isArray(result) && result[0] && 'insertId' in result[0]) {
-            insertId = Number(result[0].insertId);
-          } else if (result && 'insertId' in (result as any)) {
-            insertId = Number((result as any).insertId);
-          }
-
-          if (!insertId) {
-            // Fallback lookup
-            const all = await listTicketTypes();
-            const found = all.find(t => t.name === input.name && t.price === priceInCents);
-            if (found) return { ...found, price: found.price / 100 };
-            throw new Error("ID not returned");
-          }
+          // const result = await createTicketType({
+          //   name: input.name,
+          //   description: input.description || null,
+          //   price: priceInCents,
+          // });
 
           return {
-            id: insertId,
+            id: 9999, // Mock ID
             name: input.name,
             description: input.description || null,
-            price: priceInCents / 100,
+            price: input.price,
           };
         } catch (error: any) {
           console.error("CreateProduct Error:", error);
