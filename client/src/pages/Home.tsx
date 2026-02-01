@@ -1,7 +1,7 @@
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText, LogOut, Ticket, Plus } from "lucide-react";
+import { FileText, LogOut, Ticket, Plus, ScanLine } from "lucide-react";
 import { APP_LOGO, APP_TITLE } from "@/const";
 
 export default function Home() {
@@ -34,6 +34,13 @@ export default function Home() {
       icon: Plus,
       href: "/products",
       color: "from-indigo-600 to-purple-600",
+    },
+    {
+      title: "Scanner / Portaria",
+      description: "Validar ingressos na entrada",
+      icon: ScanLine,
+      href: "/scanner",
+      color: "from-orange-500 to-red-500",
     },
   ];
 
