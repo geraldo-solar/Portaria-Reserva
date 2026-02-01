@@ -30,7 +30,8 @@ export default function ManageProducts() {
 
   const utils = trpc.useUtils();
   const ticketTypesQuery = trpc.ticketTypes.list.useQuery();
-  const createTicketTypeMutation = trpc.ticketTypes.create.useMutation({
+  // Using access.createProduct instead of ticketTypes.create
+  const createTicketTypeMutation = trpc.access.createProduct.useMutation({
     onSuccess: () => {
       utils.ticketTypes.list.invalidate();
     },
@@ -123,22 +124,6 @@ export default function ManageProducts() {
                   <Plus size={20} />
                   Novo Produto
                 </CardTitle>
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="bg-yellow-100 text-yellow-800 border-yellow-300"
-                    onClick={() => {
-                      const t = trpc.useUtils();
-                      // @ts-ignore
-                      t.client.access.debugCreate.mutate({ test: 1 })
-                        .then(res => alert("DIAGNÓSTICO SUCESSO: " + JSON.stringify(res)))
-                        .catch(err => alert("DIAGNÓSTICO ERRO: " + err.message));
-                    }}
-                  >
-                    🛠 Testar Conexão
-                  </Button>
-                </div>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-4">

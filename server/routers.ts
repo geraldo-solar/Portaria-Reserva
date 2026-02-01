@@ -66,6 +66,54 @@ export const appRouter = router({
         return { success: true, message: "Server is alive and reachable" };
       }),
 
+    // MOVED FROM ticketTypes due to routing issues
+    createProduct: publicProcedure
+      .input(
+        z.object({
+          name: z.string().min(1, "Nome é obrigatório"),
+          description: z.string().optional(),
+          price: z.number().min(0, "Preço não pode ser negativo"),
+        })
+      )
+      .mutation(async ({ input }) => {
+        try {
+          console.log("[CreateProduct] Starting...", input);
+          const priceInCents = Math.round(input.price * 100);
+
+          const result = await createTicketType({
+            name: input.name,
+            description: input.description || null,
+            price: priceInCents,
+          });
+
+          // Safe extraction
+          let insertId = 0;
+          if (Array.isArray(result) && result[0] && 'insertId' in result[0]) {
+            insertId = Number(result[0].insertId);
+          } else if (result && 'insertId' in (result as any)) {
+            insertId = Number((result as any).insertId);
+          }
+
+          if (!insertId) {
+            // Fallback lookup
+            const all = await listTicketTypes();
+            const found = all.find(t => t.name === input.name && t.price === priceInCents);
+            if (found) return { ...found, price: found.price / 100 };
+            throw new Error("ID not returned");
+          }
+
+          return {
+            id: insertId,
+            name: input.name,
+            description: input.description || null,
+            price: priceInCents / 100,
+          };
+        } catch (error: any) {
+          console.error("CreateProduct Error:", error);
+          throw new Error(error.message || "Failed to create product");
+        }
+      }),
+
     validate: publicProcedure
       .input(z.object({ token: z.string() }))
       .mutation(async ({ input }) => {
