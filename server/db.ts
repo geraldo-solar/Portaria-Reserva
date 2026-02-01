@@ -95,7 +95,7 @@ export async function getUserByOpenId(openId: string) {
 export async function createCustomer(customer: InsertCustomer) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  
+
   const result = await db.insert(customers).values(customer);
   return result;
 }
@@ -106,7 +106,7 @@ export async function createCustomer(customer: InsertCustomer) {
 export async function getCustomerById(id: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  
+
   const result = await db.select().from(customers).where(eq(customers.id, id)).limit(1);
   return result.length > 0 ? result[0] : null;
 }
@@ -117,7 +117,7 @@ export async function getCustomerById(id: number) {
 export async function listTicketTypes() {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  
+
   return await db.select().from(ticketTypes);
 }
 
@@ -127,7 +127,7 @@ export async function listTicketTypes() {
 export async function createTicket(ticket: InsertTicket) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  
+
   const result = await db.insert(tickets).values(ticket);
   return result;
 }
@@ -138,8 +138,37 @@ export async function createTicket(ticket: InsertTicket) {
 export async function getTicketById(id: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  
+
   const result = await db.select().from(tickets).where(eq(tickets.id, id)).limit(1);
+  return result.length > 0 ? result[0] : null;
+}
+
+/**
+ * Obter ingresso por QR Token
+ */
+export async function getTicketByQr(token: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db
+    .select({
+      id: tickets.id,
+      customerId: tickets.customerId,
+      ticketTypeId: tickets.ticketTypeId,
+      ticketTypeName: ticketTypes.name,
+      price: tickets.price,
+      status: tickets.status,
+      qrToken: tickets.qrToken,
+      validUntil: tickets.validUntil,
+      usedAt: tickets.usedAt,
+      customerName: customers.name,
+    })
+    .from(tickets)
+    .leftJoin(ticketTypes, eq(tickets.ticketTypeId, ticketTypes.id))
+    .leftJoin(customers, eq(tickets.customerId, customers.id))
+    .where(eq(tickets.qrToken, token))
+    .limit(1);
+
   return result.length > 0 ? result[0] : null;
 }
 
@@ -156,7 +185,7 @@ export async function listTickets(filters?: {
 }) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  
+
   // Fazer JOIN com ticketTypes para obter o nome do produto
   const result = await db
     .select({
@@ -174,11 +203,11 @@ export async function listTickets(filters?: {
     })
     .from(tickets)
     .leftJoin(ticketTypes, eq(tickets.ticketTypeId, ticketTypes.id));
-  
+
   if (filters?.status) {
     return result.filter(t => t.status === filters.status);
   }
-  
+
   return result;
 }
 
@@ -188,7 +217,7 @@ export async function listTickets(filters?: {
 export async function cancelTicket(id: number, reason: string) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  
+
   const result = await db
     .update(tickets)
     .set({
@@ -197,7 +226,7 @@ export async function cancelTicket(id: number, reason: string) {
       cancellationReason: reason,
     })
     .where(eq(tickets.id, id));
-  
+
   return result;
 }
 
@@ -207,14 +236,14 @@ export async function cancelTicket(id: number, reason: string) {
 export async function markTicketAsPrinted(id: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  
+
   const result = await db
     .update(tickets)
     .set({
       printedAt: new Date(),
     })
     .where(eq(tickets.id, id));
-  
+
   return result;
 }
 
@@ -224,7 +253,7 @@ export async function markTicketAsPrinted(id: number) {
 export async function markTicketAsUsed(id: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  
+
   const result = await db
     .update(tickets)
     .set({
@@ -232,7 +261,7 @@ export async function markTicketAsUsed(id: number) {
       usedAt: new Date(),
     })
     .where(eq(tickets.id, id));
-  
+
   return result;
 }
 
@@ -248,7 +277,7 @@ export async function logAuditAction(
 ) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  
+
   const result = await db.insert(auditLog).values({
     action,
     entityType,
@@ -256,7 +285,7 @@ export async function logAuditAction(
     userId,
     details: details ? JSON.stringify(details) : null,
   });
-  
+
   return result;
 }
 
@@ -266,7 +295,7 @@ export async function logAuditAction(
 export async function getSalesReport(startDate: Date, endDate: Date) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  
+
   // Retorna todos os ingressos criados no período com nome do produto
   const result = await db
     .select({
@@ -287,7 +316,7 @@ export async function getSalesReport(startDate: Date, endDate: Date) {
     .where(
       sql`${tickets.createdAt} >= ${startDate.toISOString()} AND ${tickets.createdAt} <= ${endDate.toISOString()}`
     );
-  
+
   return result;
 }
 
@@ -297,10 +326,10 @@ export async function getSalesReport(startDate: Date, endDate: Date) {
 export async function getSalesStats(startDate?: Date, endDate?: Date) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  
+
   // Buscar ingressos filtrados por data na query SQL
   let query = db.select().from(tickets);
-  
+
   // Aplicar filtro de data na query SQL se fornecido
   if (startDate && endDate) {
     const allTickets = await db
@@ -309,7 +338,7 @@ export async function getSalesStats(startDate?: Date, endDate?: Date) {
       .where(
         sql`${tickets.createdAt} >= ${startDate.toISOString()} AND ${tickets.createdAt} <= ${endDate.toISOString()}`
       );
-    
+
     const stats = {
       totalSales: 0,
       totalRevenue: 0,
@@ -322,13 +351,13 @@ export async function getSalesStats(startDate?: Date, endDate?: Date) {
         cartao: { count: 0, total: 0 },
       },
     };
-    
+
     allTickets.forEach((ticket) => {
       // Apenas contar vendas ativas (não canceladas)
       if (ticket.status !== "cancelled") {
         stats.totalSales++;
         stats.totalRevenue += ticket.price;
-        
+
         // Contar por método de pagamento
         const paymentMethod = ticket.paymentMethod || "dinheiro";
         if (paymentMethod === "dinheiro" || paymentMethod === "pix" || paymentMethod === "cartao") {
@@ -336,17 +365,17 @@ export async function getSalesStats(startDate?: Date, endDate?: Date) {
           stats.paymentMethods[paymentMethod].total += ticket.price;
         }
       }
-      
+
       if (ticket.status === "cancelled") stats.totalCancelled++;
       else if (ticket.status === "used") stats.totalUsed++;
       else if (ticket.status === "active") stats.totalActive++;
     });
-    
+
     return stats;
   } else {
     // Sem filtro de data, buscar todos
     const allTickets = await query;
-    
+
     const stats = {
       totalSales: 0,
       totalRevenue: 0,
@@ -359,13 +388,13 @@ export async function getSalesStats(startDate?: Date, endDate?: Date) {
         cartao: { count: 0, total: 0 },
       },
     };
-    
+
     allTickets.forEach((ticket) => {
       // Apenas contar vendas ativas (não canceladas)
       if (ticket.status !== "cancelled") {
         stats.totalSales++;
         stats.totalRevenue += ticket.price;
-        
+
         // Contar por método de pagamento
         const paymentMethod = ticket.paymentMethod || "dinheiro";
         if (paymentMethod === "dinheiro" || paymentMethod === "pix" || paymentMethod === "cartao") {
@@ -373,12 +402,12 @@ export async function getSalesStats(startDate?: Date, endDate?: Date) {
           stats.paymentMethods[paymentMethod].total += ticket.price;
         }
       }
-      
+
       if (ticket.status === "cancelled") stats.totalCancelled++;
       else if (ticket.status === "used") stats.totalUsed++;
       else if (ticket.status === "active") stats.totalActive++;
     });
-    
+
     return stats;
   }
 }

@@ -67,6 +67,8 @@ export const tickets = mysqlTable("tickets", {
   cancellationReason: text("cancellationReason"),
   printedAt: timestamp("printedAt"),
   usedAt: timestamp("usedAt"),
+  qrToken: varchar("qrToken", { length: 255 }).unique(),
+  validUntil: timestamp("validUntil"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 });

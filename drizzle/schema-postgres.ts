@@ -70,6 +70,8 @@ export const tickets = pgTable("tickets", {
   cancellationReason: text("cancellation_reason"),
   printedAt: timestamp("printed_at"),
   usedAt: timestamp("used_at"),
+  qrToken: varchar("qr_token", { length: 255 }).unique(),
+  validUntil: timestamp("valid_until"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

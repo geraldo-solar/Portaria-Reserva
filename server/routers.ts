@@ -1,5 +1,6 @@
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "./_core/cookies";
+import { addHours } from "date-fns";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, router } from "./_core/trpc";
 import { z } from "zod";
@@ -16,6 +17,7 @@ import {
   logAuditAction,
   getSalesReport,
   getSalesStats,
+  getTicketByQr,
 } from "./db";
 import { v4 as uuidv4 } from "uuid";
 import { getDb } from "./db";
@@ -37,6 +39,37 @@ export const appRouter = router({
         success: true,
       } as const;
     }),
+  }),
+
+  access: router({
+    validate: publicProcedure
+      .input(z.object({ token: z.string() }))
+      .mutation(async ({ input }) => {
+        const ticket = await getTicketByQr(input.token);
+
+        if (!ticket) {
+          return { status: "invalid", message: "Ingresso não encontrado" } as const;
+        }
+
+        if (ticket.status !== "active" && ticket.status !== "used") {
+          if (ticket.status === 'cancelled') return { status: "invalid", message: "Ingresso cancelado" } as const;
+        }
+
+        const now = new Date();
+        if (ticket.validUntil && now > ticket.validUntil) {
+          return { status: "expired", message: "QR Code expirado", customer: ticket.customerName } as const;
+        }
+
+        return {
+          status: "valid",
+          ticket: {
+            id: ticket.id,
+            customerName: ticket.customerName,
+            type: ticket.ticketTypeName,
+            validUntil: ticket.validUntil
+          }
+        } as const;
+      }),
   }),
 
   tickets: router({
@@ -86,6 +119,8 @@ export const appRouter = router({
           price: ticketType.price,
           paymentMethod: input.paymentMethod,
           status: "active",
+          qrToken: uuidv4(),
+          validUntil: addHours(new Date(), 12),
         });
 
         const ticketId = (ticketResult[0]?.insertId as number) || 1;

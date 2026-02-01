@@ -12,6 +12,7 @@ interface ThermalTicketPrinterProps {
     ticketType?: string;
     price: number;
     createdAt: Date;
+    qrToken?: string;
   };
 }
 
@@ -25,11 +26,20 @@ export function ThermalTicketPrinter({ open, onClose, ticket }: ThermalTicketPri
     }
   }, [open, ticket.id]);
 
-  const handlePrint = () => {
+  const handlePrint = async () => {
+    // Gerar QR Code se o token existir
+    let qrImage = "";
+    if (ticket.qrToken) {
+      try {
+        const QRCode = (await import("qrcode")).default;
+        qrImage = await QRCode.toDataURL(ticket.qrToken, { width: 150, margin: 1 });
+      } catch (e) {
+        console.error("Erro ao gerar QR Code", e);
+      }
+    }
+
     const printWindow = window.open("", "", "width=400,height=600");
     if (!printWindow) return;
-
-
 
     // HTML para papel térmico 58mm
     const html = `
@@ -75,6 +85,16 @@ export function ThermalTicketPrinter({ open, onClose, ticket }: ThermalTicketPri
             .logo img {
               max-width: 35mm;
               height: auto;
+            }
+            
+            .qrcode {
+              text-align: center;
+              margin: 2mm 0;
+            }
+            
+            .qrcode img {
+              width: 30mm;
+              height: 30mm;
             }
             
             .header {
@@ -165,12 +185,20 @@ export function ThermalTicketPrinter({ open, onClose, ticket }: ThermalTicketPri
                 <span class="info-label">Data:</span> ${new Date(ticket.createdAt).toLocaleDateString("pt-BR")}
               </div>
 
+              ${qrImage ? `
+                <div class="qrcode">
+                   <img src="${qrImage}" alt="QR Code" />
+                </div>
+                <div class="info" style="font-size: 7px;">
+                   Válido até: ${new Date(new Date(ticket.createdAt).getTime() + 12 * 60 * 60 * 1000).toLocaleString("pt-BR")}
+                </div>
+              ` : ''}
 
             </div>
             
             <div class="footer">
               <div style="font-size: 7px; margin-bottom: 2mm;">
-                Válido por 1 dia a partir da emissão
+                Válido por 12h para entrada e pedidos
               </div>
               <div style="font-size: 7px;">
                 Apresente este ingresso na entrada
