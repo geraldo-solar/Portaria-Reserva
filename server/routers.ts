@@ -265,6 +265,9 @@ export const appRouter = router({
         })
       )
       .mutation(async ({ input }) => {
+        // PROBE DIAGNÓSTICO
+        throw new Error("TESTE_DIAGNOSTICO_JSON");
+
         try {
           console.log("[CreateProduct] Starting...", input);
           const priceInCents = Math.round(input.price * 100);
