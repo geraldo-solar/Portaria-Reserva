@@ -7,6 +7,7 @@ import { defineConfig } from "vite";
 import { vitePluginManusRuntime } from "vite-plugin-manus-runtime";
 
 
+// Force rebuild: v2
 import { fileURLToPath } from "url";
 import { dirname } from "path";
 
