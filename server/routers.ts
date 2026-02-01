@@ -18,6 +18,7 @@ import {
   getSalesReport,
   getSalesStats,
   getTicketByQr,
+  createTicketType,
 } from "./db";
 import { v4 as uuidv4 } from "uuid";
 import { getDb } from "./db";
@@ -248,20 +249,28 @@ export const appRouter = router({
         })
       )
       .mutation(async ({ input }) => {
-        const db = await getDb();
-        if (!db) {
-          throw new Error("Database not available");
-        }
-
         const priceInCents = Math.round(input.price * 100);
 
-        const result = await db.insert(ticketTypes).values({
+        const result = await createTicketType({
           name: input.name,
           description: input.description || null,
           price: priceInCents,
         });
 
-        const insertId = parseInt(result[0].insertId as any);
+        // Safe extraction of insertId
+        const insertId = result?.[0]?.insertId
+          ? Number(result[0].insertId)
+          : 0;
+
+        if (!insertId) {
+          console.error("[CreateProduct] Failed to get insertId", result);
+          // Verify if it was inserted by querying by name (fallback)
+          const all = await listTicketTypes();
+          const found = all.find(t => t.name === input.name && t.price === priceInCents);
+          if (found) return { ...found, price: found.price / 100 };
+
+          throw new Error("Falha ao criar produto: ID não retornado");
+        }
 
         return {
           id: insertId,

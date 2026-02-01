@@ -1,6 +1,6 @@
 import { eq, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, customers, ticketTypes, tickets, auditLog, InsertCustomer, InsertTicket, InsertAuditLog } from "../drizzle/schema";
+import { InsertUser, users, customers, ticketTypes, tickets, auditLog, InsertCustomer, InsertTicket, InsertAuditLog, InsertTicketType } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -141,6 +141,17 @@ export async function getTicketById(id: number) {
 
   const result = await db.select().from(tickets).where(eq(tickets.id, id)).limit(1);
   return result.length > 0 ? result[0] : null;
+}
+
+/**
+ * Criar novo tipo de ingresso
+ */
+export async function createTicketType(type: InsertTicketType) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.insert(ticketTypes).values(type);
+  return result;
 }
 
 /**
