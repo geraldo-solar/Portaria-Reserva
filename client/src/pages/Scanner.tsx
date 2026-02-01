@@ -17,6 +17,7 @@ export default function Scanner() {
     const [scanning, setScanning] = useState(true);
 
     const validateMutation = trpc.access.validate.useMutation();
+    const checkInMutation = trpc.access.checkIn.useMutation();
     const scannerRef = useRef<Html5QrcodeScanner | null>(null);
 
     useEffect(() => {
@@ -154,7 +155,32 @@ export default function Scanner() {
                                         </div>
                                     )}
 
-                                    <Button size="lg" onClick={handleReset} className="w-full mt-4">
+                                    {scanResult?.status === 'valid' && (
+                                        <Button
+                                            size="lg"
+                                            className="w-full mt-4 bg-green-600 hover:bg-green-700 text-white font-bold h-16 text-xl animate-pulse"
+                                            onClick={async () => {
+                                                if (scanResult.ticket?.id) {
+                                                    try {
+                                                        await checkInMutation.mutateAsync({ ticketId: scanResult.ticket.id });
+                                                        setScanResult({
+                                                            status: 'used',
+                                                            message: 'Check-in realizado com sucesso!',
+                                                            customer: scanResult.customer,
+                                                            ticket: scanResult.ticket,
+                                                            usedAt: new Date() // Feedback imediato
+                                                        } as any);
+                                                    } catch (e) {
+                                                        alert("Erro ao realizar check-in");
+                                                    }
+                                                }
+                                            }}
+                                        >
+                                            CONFIRMAR ENTRADA
+                                        </Button>
+                                    )}
+
+                                    <Button size="lg" variant="outline" onClick={handleReset} className="w-full mt-4">
                                         Ler Próximo
                                     </Button>
                                 </>

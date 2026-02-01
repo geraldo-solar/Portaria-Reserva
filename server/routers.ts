@@ -96,6 +96,13 @@ export const appRouter = router({
           }
         } as const;
       }),
+
+    checkIn: publicProcedure
+      .input(z.object({ ticketId: z.number() }))
+      .mutation(async ({ input }) => {
+        await markTicketAsUsed(input.ticketId);
+        return { success: true };
+      }),
   }),
 
   tickets: router({
@@ -258,35 +265,54 @@ export const appRouter = router({
         })
       )
       .mutation(async ({ input }) => {
-        const priceInCents = Math.round(input.price * 100);
+        try {
+          console.log("[CreateProduct] Starting...", input);
+          const priceInCents = Math.round(input.price * 100);
 
-        const result = await createTicketType({
-          name: input.name,
-          description: input.description || null,
-          price: priceInCents,
-        });
+          const result = await createTicketType({
+            name: input.name,
+            description: input.description || null,
+            price: priceInCents,
+          });
 
-        // Safe extraction of insertId
-        const insertId = result?.[0]?.insertId
-          ? Number(result[0].insertId)
-          : 0;
+          console.log("[CreateProduct] Raw Result:", result);
 
-        if (!insertId) {
-          console.error("[CreateProduct] Failed to get insertId", result);
-          // Verify if it was inserted by querying by name (fallback)
-          const all = await listTicketTypes();
-          const found = all.find(t => t.name === input.name && t.price === priceInCents);
-          if (found) return { ...found, price: found.price / 100 };
+          // Safe extraction of insertId
+          // Handle various mysql driver return formats
+          let insertId = 0;
+          if (Array.isArray(result) && result[0] && 'insertId' in result[0]) {
+            insertId = Number(result[0].insertId);
+          } else if (result && 'insertId' in (result as any)) {
+            insertId = Number((result as any).insertId);
+          }
 
-          throw new Error("Falha ao criar produto: ID não retornado");
+          console.log("[CreateProduct] Parsed ID:", insertId);
+
+          if (!insertId) {
+            console.warn("[CreateProduct] Failed to get insertId, attempting fallback lookup");
+            // Verify if it was inserted by querying by name (fallback)
+            const all = await listTicketTypes();
+            const found = all.find(t => t.name === input.name && t.price === priceInCents); // Strict check
+
+            if (found) {
+              console.log("[CreateProduct] Found via fallback:", found.id);
+              return { ...found, price: found.price / 100 };
+            }
+
+            throw new Error("Falha ao criar produto: Banco de dados não retornou ID");
+          }
+
+          return {
+            id: insertId,
+            name: input.name,
+            description: input.description || null,
+            price: priceInCents / 100,
+          };
+        } catch (error: any) {
+          console.error("[CreateProduct] CRITICAL ERROR:", error);
+          // Return a readable error instead of crashing
+          throw new Error(`Erro no servidor: ${error.message || "Falha desconhecida"}`);
         }
-
-        return {
-          id: insertId,
-          name: input.name,
-          description: input.description || null,
-          price: priceInCents / 100,
-        };
       }),
 
     delete: publicProcedure

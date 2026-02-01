@@ -260,7 +260,7 @@ export async function markTicketAsPrinted(id: number) {
 }
 
 /**
- * Registrar uso de ingresso
+ * Marcar ingresso como utilizado (Check-in)
  */
 export async function markTicketAsUsed(id: number) {
   const db = await getDb();
