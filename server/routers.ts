@@ -42,6 +42,22 @@ export const appRouter = router({
   }),
 
   access: router({
+    info: publicProcedure
+      .input(z.object({ token: z.string() }))
+      .query(async ({ input }) => {
+        const ticket = await getTicketByQr(input.token);
+        if (!ticket) return null;
+
+        return {
+          customerName: ticket.customerName,
+          ticketTypeName: ticket.ticketTypeName,
+          validUntil: ticket.validUntil,
+          qrToken: ticket.qrToken,
+          status: ticket.status,
+          createdAt: ticket.createdAt,
+        };
+      }),
+
     validate: publicProcedure
       .input(z.object({ token: z.string() }))
       .mutation(async ({ input }) => {

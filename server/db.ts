@@ -162,6 +162,7 @@ export async function getTicketByQr(token: string) {
       validUntil: tickets.validUntil,
       usedAt: tickets.usedAt,
       customerName: customers.name,
+      createdAt: tickets.createdAt,
     })
     .from(tickets)
     .leftJoin(ticketTypes, eq(tickets.ticketTypeId, ticketTypes.id))

@@ -5,9 +5,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { AlertCircle, CheckCircle, ArrowLeft, Plus, Minus, Ticket, WifiOff } from "lucide-react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
-import { ThermalTicketPrinter } from "@/components/ThermalTicketPrinter";
 import { saveOfflineSale, cacheTicketTypes, getCachedTicketTypes, type CachedTicketType } from "@/lib/offlineStorage";
 import { useOfflineSync } from "@/hooks/useOfflineSync";
+import QRCode from "react-qr-code";
+import { Share2, X } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface CartItem {
   ticketTypeId: number;
@@ -23,9 +26,8 @@ export default function SellTicket() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
-  const [ticketsToPrint, setTicketsToPrint] = useState<any[]>([]);
-  const [currentPrintIndex, setCurrentPrintIndex] = useState(0);
-  const [showPrintModal, setShowPrintModal] = useState(false);
+  const [soldTickets, setSoldTickets] = useState<any[]>([]);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [cachedTicketTypes, setCachedTicketTypes] = useState<CachedTicketType[]>([]);
   const [usingCache, setUsingCache] = useState(false);
 
@@ -67,7 +69,7 @@ export default function SellTicket() {
     if (!ticketType) return;
 
     const existingItem = cart.find((item) => item.ticketTypeId === ticketTypeId);
-    
+
     if (existingItem) {
       setCart(
         cart.map((item) =>
@@ -129,7 +131,7 @@ export default function SellTicket() {
       // Se estiver offline, salvar localmente
       if (!isOnline) {
         console.log('[OFFLINE] Salvando venda offline...', { cart, paymentMethod });
-        
+
         try {
           const saleId = await saveOfflineSale({
             timestamp: Date.now(),
@@ -142,7 +144,7 @@ export default function SellTicket() {
             synced: false,
             syncAttempts: 0,
           });
-          
+
           console.log('[OFFLINE] Venda salva com ID:', saleId);
 
           // Criar tickets simulados para impressão offline
@@ -163,7 +165,7 @@ export default function SellTicket() {
           console.log('[OFFLINE] Tickets criados:', tickets.length);
           await updatePendingCount();
           console.log('[OFFLINE] Contador de pendências atualizado');
-          
+
           setSuccessMessage(`✅ ${tickets.length} ingresso(s) salvo(s) offline! Serão sincronizados quando a conexão voltar.`);
         } catch (offlineError) {
           console.error('[OFFLINE] Erro ao salvar venda offline:', offlineError);
@@ -190,12 +192,13 @@ export default function SellTicket() {
       setPaymentMethod("dinheiro");
 
       // Iniciar processo de impressão
-      setTicketsToPrint(tickets);
-      setCurrentPrintIndex(0);
-      setShowPrintModal(true);
+      setSuccess(true);
+      setCart([]);
+      setPaymentMethod("dinheiro");
 
-      // Limpar mensagem de sucesso após 3 segundos
-      setTimeout(() => setSuccess(false), 3000);
+      // Mostrar modal de sucesso/compartilhamento
+      setSoldTickets(tickets);
+      setShowSuccessModal(true);
     } catch (err: any) {
       setError(err.message || "Erro ao vender ingressos");
     }
@@ -427,21 +430,68 @@ export default function SellTicket() {
       </div>
 
       {/* Modal de impressão */}
-      {showPrintModal && ticketsToPrint.length > 0 && (
-        <ThermalTicketPrinter
-          open={showPrintModal}
-          onClose={() => {
-            if (currentPrintIndex < ticketsToPrint.length - 1) {
-              setCurrentPrintIndex(currentPrintIndex + 1);
-            } else {
-              setShowPrintModal(false);
-              setTicketsToPrint([]);
-              setCurrentPrintIndex(0);
-            }
-          }}
-          ticket={ticketsToPrint[currentPrintIndex]}
-        />
-      )}
+      {/* Modal de Sucesso e Compartilhamento */}
+      <Dialog open={showSuccessModal} onOpenChange={setShowSuccessModal}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between">
+              <span>Venda Realizada! 🎉</span>
+              <Button variant="ghost" size="sm" onClick={() => setShowSuccessModal(false)}>
+                <X size={16} />
+              </Button>
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="bg-emerald-50 text-emerald-800 p-4 rounded-lg text-center mb-4">
+            <p className="font-bold text-lg">Entregar ao cliente</p>
+            <p className="text-sm">Peça para o cliente ler o QR Code ou envie no WhatsApp.</p>
+          </div>
+
+          <ScrollArea className="max-h-[60vh]">
+            <div className="space-y-6 p-1">
+              {soldTickets.map((ticket, index) => (
+                <div key={ticket.id || index} className="border rounded-xl p-4 bg-white shadow-sm flex flex-col items-center gap-4">
+                  <div className="text-center">
+                    <p className="font-bold text-lg">{ticket.ticketTypeName || "Ingresso"}</p>
+                    <p className="text-xs text-gray-500 font-mono">#{ticket.id}</p>
+                  </div>
+
+                  {ticket.qrToken && (
+                    <div className="bg-white p-2 border rounded-lg">
+                      <QRCode value={window.location.origin + "/ticket/" + ticket.qrToken} size={150} />
+                    </div>
+                  )}
+
+                  <div className="w-full">
+                    <Button
+                      className="w-full bg-[#25D366] hover:bg-[#128C7E] text-white"
+                      onClick={() => {
+                        const link = `${window.location.origin}/ticket/${ticket.qrToken}`;
+                        const text = `Olá! Aqui está o seu ingresso digital para o Reserva Solar: ${link}`;
+                        window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+                      }}
+                    >
+                      <Share2 className="mr-2" size={18} />
+                      Enviar no WhatsApp
+                    </Button>
+                    <p className="text-center text-[10px] text-gray-400 mt-2">
+                      Válido até: {ticket.validUntil ? new Date(ticket.validUntil).toLocaleString('pt-BR') :
+                        new Date(new Date().getTime() + 12 * 60 * 60 * 1000).toLocaleString('pt-BR')}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+
+          <div className="mt-4">
+            <Button variant="outline" className="w-full" onClick={() => setShowSuccessModal(false)}>
+              Fechar e Nova Venda
+            </Button>
+          </div>
+
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
