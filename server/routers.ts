@@ -261,14 +261,13 @@ export const appRouter = router({
           price: priceInCents,
         });
 
-        const newType = await listTicketTypes();
-        const created = newType[newType.length - 1];
+        const insertId = parseInt(result[0].insertId as any);
 
         return {
-          id: created.id,
-          name: created.name,
-          description: created.description,
-          price: created.price / 100,
+          id: insertId,
+          name: input.name,
+          description: input.description || null,
+          price: priceInCents / 100,
         };
       }),
 

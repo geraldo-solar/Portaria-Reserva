@@ -58,7 +58,7 @@ export default function ManageProducts() {
       return;
     }
 
-    const price = parseFloat(formData.price);
+    const price = parseFloat(formData.price.replace(',', '.'));
     if (isNaN(price) || price < 0) {
       setError("Preço deve ser um número válido (maior ou igual a 0)");
       return;
