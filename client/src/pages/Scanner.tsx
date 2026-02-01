@@ -9,7 +9,7 @@ import { useLocation } from "wouter";
 export default function Scanner() {
     const [, setLocation] = useLocation();
     const [scanResult, setScanResult] = useState<{
-        status: "valid" | "expired" | "invalid";
+        status: "valid" | "expired" | "invalid" | "used";
         message: string;
         customer?: string;
         ticket?: any;
@@ -42,7 +42,8 @@ export default function Scanner() {
                             message: result.message,
                             customer: result.ticket?.customerName || (result as any).customer,
                             ticket: result.ticket,
-                        });
+                            ...result
+                        } as any);
                     } catch (error) {
                         setScanResult({
                             status: "invalid",
@@ -93,7 +94,8 @@ export default function Scanner() {
                     </Card>
                 ) : (
                     <Card className={`w-full border-2 ${scanResult?.status === 'valid' ? 'border-green-500 bg-green-50' :
-                            scanResult?.status === 'expired' ? 'border-yellow-500 bg-yellow-50' :
+                        scanResult?.status === 'expired' ? 'border-yellow-500 bg-yellow-50' :
+                            scanResult?.status === 'used' ? 'border-orange-500 bg-orange-50' :
                                 'border-red-500 bg-red-50'
                         }`}>
                         <CardContent className="p-6 flex flex-col items-center text-center space-y-4">
@@ -107,6 +109,9 @@ export default function Scanner() {
                                     {scanResult?.status === 'expired' && (
                                         <AlertCircle className="text-yellow-600" size={64} />
                                     )}
+                                    {scanResult?.status === 'used' && (
+                                        <AlertCircle className="text-orange-600" size={64} />
+                                    )}
                                     {scanResult?.status === 'invalid' && (
                                         <XCircle className="text-red-600" size={64} />
                                     )}
@@ -114,7 +119,8 @@ export default function Scanner() {
                                     <div>
                                         <h2 className="text-2xl font-bold uppercase mb-2">
                                             {scanResult?.status === 'valid' ? 'LIBERADO' :
-                                                scanResult?.status === 'expired' ? 'EXPIRADO' : 'INVÁLIDO'}
+                                                scanResult?.status === 'used' ? 'JÁ UTILIZADO' :
+                                                    scanResult?.status === 'expired' ? 'EXPIRADO' : 'INVÁLIDO'}
                                         </h2>
                                         <p className="text-lg font-medium">
                                             {scanResult?.message}
@@ -125,6 +131,16 @@ export default function Scanner() {
                                         <div className="bg-white/50 p-4 rounded-lg w-full">
                                             <p className="text-sm opacity-75">Cliente</p>
                                             <p className="text-xl font-bold">{scanResult.customer}</p>
+
+                                            {(scanResult as any).usedAt && (
+                                                <div className="mt-2 text-orange-800 bg-orange-100 p-2 rounded">
+                                                    <p className="text-xs font-bold">Utilizado em:</p>
+                                                    <p className="text-sm">
+                                                        {new Date((scanResult as any).usedAt).toLocaleString()}
+                                                    </p>
+                                                </div>
+                                            )}
+
                                             {scanResult.ticket && (
                                                 <>
                                                     <p className="text-sm opacity-75 mt-2">Tipo</p>

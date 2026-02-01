@@ -68,8 +68,17 @@ export const appRouter = router({
           return { status: "invalid", message: "Ingresso não encontrado" } as const;
         }
 
-        if (ticket.status !== "active" && ticket.status !== "used") {
-          if (ticket.status === 'cancelled') return { status: "invalid", message: "Ingresso cancelado" } as const;
+        if (ticket.status === 'used') {
+          return {
+            status: "used",
+            message: "Ingresso já utilizado",
+            customer: ticket.customerName,
+            usedAt: ticket.usedAt
+          } as const;
+        }
+
+        if (ticket.status !== "active") {
+          return { status: "invalid", message: "Ingresso inválido ou cancelado" } as const;
         }
 
         const now = new Date();
