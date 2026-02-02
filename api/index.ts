@@ -27,7 +27,7 @@ app.post("/api/debug-create", (req, res) => {
 
     res.json({
       success: true,
-      message: "Raw endpoint worked (FULL RESTORED)!",
+      message: "Raw endpoint worked (FULL RESTORED) - v" + new Date().getTime(),
       received: req.body
     });
   } catch (e: any) {
