@@ -23,20 +23,22 @@ app.get("/api/debug-db-check", async (req, res) => {
     const db = await getDb();
     if (!db) throw new Error("Database not initialized");
 
-    // List tables
-    const result = await db.execute(sql`SHOW TABLES`);
+    // List tables (Postgres)
+    const result = await db.execute(sql`SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'`);
 
-    // Check specific table schema
+    // Check specific table schema (Postgres)
     let schemaInfo = null;
     try {
-      schemaInfo = await db.execute(sql`DESCRIBE ticketTypes`);
+      schemaInfo = await db.execute(sql`SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'ticket_types'`);
     } catch (e) {
       schemaInfo = "Could not describe table (it may not exist)";
     }
 
     res.json({
       success: true,
-      tables: result[0],
+      tables: result[0], // Postgres returns rows in the rows property, but drizzle execute might return differently depending on driver. 
+      // node-postgres returns { rows: [], ... }. Drizzle's execute with node-postgres returns query result.
+      // Let's just return the whole result to inspect.
       ticketTypesSchema: schemaInfo
     });
   } catch (e: any) {
