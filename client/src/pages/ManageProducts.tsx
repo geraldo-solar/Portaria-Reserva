@@ -21,6 +21,9 @@ function ManyChatDiagnostic() {
 
   if (!status) return null;
 
+  const targetTag = "Passante Reserva";
+  const foundTag = status.tags?.find((t: any) => t.name.toLowerCase() === targetTag.toLowerCase());
+
   return (
     <div className={`mb-6 p-4 rounded-lg border ${status.apiWorks ? 'bg-blue-50 border-blue-200 text-blue-800' : 'bg-red-50 border-red-200 text-red-800'}`}>
       <h3 className="font-bold flex items-center gap-2">
@@ -32,9 +35,15 @@ function ManyChatDiagnostic() {
         <p>Conexão API: <strong>{status.apiWorks ? "OK" : "Falhou"}</strong></p>
         {status.error && <p className="mt-1 font-mono text-xs bg-white/50 p-1 rounded">Erro: {status.error}</p>}
 
+        <div className={`mt-3 p-2 rounded border ${foundTag ? 'bg-green-100 border-green-300 text-green-800' : 'bg-amber-100 border-amber-300 text-amber-800'}`}>
+          <p className="font-bold">Tag Alvo: "{targetTag}"</p>
+          <p>Status: {foundTag ? `✅ ENCONTRADA (ID: ${foundTag.id})` : "❌ NÃO ENCONTRADA NA LISTA"}</p>
+          {foundTag && foundTag.name !== targetTag && <p className="text-xs mt-1">(Nome exato encontrado: "{foundTag.name}")</p>}
+        </div>
+
         {status.tags && status.tags.length > 0 && (
-          <div className="mt-3">
-            <p className="font-semibold mb-1">Tags Encontradas ({status.tags.length}):</p>
+          <div className="mt-3 opacity-75">
+            <p className="font-semibold mb-1">Todas as Tags ({status.tags.length}):</p>
             <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
               {status.tags.map((t: any) => (
                 <span key={t.id} className="bg-white/60 px-2 py-1 rounded text-xs border border-blue-100">
