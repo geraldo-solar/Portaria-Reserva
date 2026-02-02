@@ -24,6 +24,7 @@ import { v4 as uuidv4 } from "uuid";
 import { getDb } from "./db";
 import { ticketTypes } from "../drizzle/schema";
 import { createBrevoContact } from "./services/brevo";
+import { createManyChatSubscriber } from "./services/manychat";
 
 export const appRouter = router({
   system: systemRouter,
@@ -228,6 +229,13 @@ export const appRouter = router({
             await createBrevoContact(input.customerName, input.customerEmail, input.customerPhone);
           } catch (err) {
             console.error("Brevo sync failed:", err);
+          }
+
+          // Await ManyChat sync
+          try {
+            await createManyChatSubscriber(input.customerName, input.customerEmail, input.customerPhone);
+          } catch (err) {
+            console.error("ManyChat sync failed:", err);
           }
         }
 
