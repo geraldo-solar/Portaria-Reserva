@@ -1,7 +1,7 @@
 import express from "express";
-// import { createExpressMiddleware } from "@trpc/server/adapters/express";
-// import { appRouter } from "../server/routers";
-// import { createContext } from "../server/_core/context";
+import { createExpressMiddleware } from "@trpc/server/adapters/express";
+import { appRouter } from "../server/routers";
+import { createContext } from "../server/_core/context";
 // import { getDb } from "../server/db";
 // import { ENV } from "../server/_core/env";
 // import * as schema from "../drizzle/schema";
@@ -22,12 +22,12 @@ app.get("/api/health", (req, res) => {
 app.post("/api/debug-create", (req, res) => {
   try {
     console.log("[RawDebug] Hit with body:", req.body);
-    // Debug imports
-    console.log("Drizzle SQL loaded type:", typeof sql);
+    // Force usage of context to ensure it's loaded
+    console.log("Context loaded:", typeof createContext);
 
     res.json({
       success: true,
-      message: "Raw endpoint worked (DRIZZLE PKG ONLY)!",
+      message: "Raw endpoint worked (FULL RESTORED)!",
       received: req.body
     });
   } catch (e: any) {
@@ -37,10 +37,10 @@ app.post("/api/debug-create", (req, res) => {
 });
 
 // tRPC API
-// app.all("/api/trpc/*", createExpressMiddleware({
-//   router: appRouter,
-//   createContext,
-// }));
+app.all("/api/trpc/*", createExpressMiddleware({
+  router: appRouter,
+  createContext,
+}));
 
 // Catch all other /api routes
 app.all("/api/*", (req, res) => {
