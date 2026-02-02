@@ -2,6 +2,8 @@ import express from "express";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { appRouter } from "../server/routers";
 import { createContext } from "../server/_core/context";
+import { getDb } from "../server/db";
+import { sql } from "drizzle-orm";
 
 const app = express();
 
@@ -13,6 +15,33 @@ app.use(express.urlencoded({ limit: "50mb", extended: true }));
 // Health check
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
+});
+
+// DB DIAGNOSTIC ENDPOINT
+app.get("/api/debug-db-check", async (req, res) => {
+  try {
+    const db = await getDb();
+    if (!db) throw new Error("Database not initialized");
+
+    // List tables
+    const result = await db.execute(sql`SHOW TABLES`);
+
+    // Check specific table schema
+    let schemaInfo = null;
+    try {
+      schemaInfo = await db.execute(sql`DESCRIBE ticketTypes`);
+    } catch (e) {
+      schemaInfo = "Could not describe table (it may not exist)";
+    }
+
+    res.json({
+      success: true,
+      tables: result[0],
+      ticketTypesSchema: schemaInfo
+    });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message, stack: e.stack });
+  }
 });
 
 // RAW DEBUG ENDPOINT
