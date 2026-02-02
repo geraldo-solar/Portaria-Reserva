@@ -502,7 +502,18 @@ export default function SellTicket() {
 
           <div className="bg-emerald-50 text-emerald-800 p-4 rounded-lg text-center mb-4">
             <p className="font-bold text-lg">Entregar ao cliente</p>
-            <p className="text-sm">Peça para o cliente ler o QR Code ou envie no WhatsApp.</p>
+            <p className="text-sm mb-2">Peça para o cliente ler o QR Code ou envie no WhatsApp.</p>
+
+            <div className="mt-3">
+              <label className="block text-xs font-bold text-emerald-700 mb-1 text-left">Número do WhatsApp (Edite se necessário):</label>
+              <input
+                type="text"
+                className="w-full text-sm p-2 border border-emerald-300 rounded focus:ring-2 focus:ring-emerald-500 bg-white"
+                value={lastCustomer.phone}
+                onChange={(e) => setLastCustomer({ ...lastCustomer, phone: e.target.value })}
+                placeholder="DDD + Número"
+              />
+            </div>
           </div>
 
           <ScrollArea className="max-h-[60vh]">

@@ -182,6 +182,8 @@ export async function getTicketByQr(token: string) {
       validUntil: tickets.validUntil,
       usedAt: tickets.usedAt,
       customerName: customers.name,
+      customerPhone: customers.phone,
+      customerEmail: customers.email,
       createdAt: tickets.createdAt,
     })
     .from(tickets)

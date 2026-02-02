@@ -54,8 +54,8 @@ export default function PublicTicket() {
                 <div className={`h-2 w-full ${isValid ? 'bg-emerald-500' : 'bg-red-500'}`} />
 
                 <CardHeader className="text-center pb-2">
-                    <div className="mx-auto bg-white p-2 rounded-lg mb-2 inline-block">
-                        <img src="/logo-reserva-solar.png" alt="Reserva Solar" className="h-12" />
+                    <div className="mx-auto mb-4">
+                        <img src="/logo-reserva-solar.png" alt="Reserva Solar" className="h-24 mx-auto object-contain" />
                     </div>
                     <CardTitle className="uppercase tracking-widest text-sm text-gray-500">
                         Seu Ingresso Digital
@@ -89,6 +89,12 @@ export default function PublicTicket() {
                             <div>
                                 <p className="text-xs text-gray-500 uppercase">Cliente</p>
                                 <p className="font-bold text-gray-900">{ticket.customerName}</p>
+                                {(ticket.customerPhone || ticket.customerEmail) && (
+                                    <div className="mt-1 text-xs text-gray-500 space-y-0.5">
+                                        {ticket.customerPhone && <p>📱 {ticket.customerPhone}</p>}
+                                        {ticket.customerEmail && <p>📧 {ticket.customerEmail}</p>}
+                                    </div>
+                                )}
                             </div>
                         </div>
 

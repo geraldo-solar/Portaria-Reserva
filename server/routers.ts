@@ -51,6 +51,8 @@ export const appRouter = router({
 
         return {
           customerName: ticket.customerName,
+          customerPhone: ticket.customerPhone,
+          customerEmail: ticket.customerEmail,
           ticketTypeName: ticket.ticketTypeName,
           validUntil: ticket.validUntil,
           qrToken: ticket.qrToken,
