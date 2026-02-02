@@ -61,6 +61,17 @@ app.post("/api/debug-create", (req, res) => {
   }
 });
 
+app.get("/api/debug-tickets", async (req, res) => {
+  try {
+    const db = await getDb();
+    if (!db) throw new Error("DB not init");
+    const allTickets = await db.select().from(sql`tickets`);
+    res.json({ count: allTickets.length, tickets: allTickets });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // AUTO MIGRATION ENDPOINT (Temporary)
 app.get("/api/debug-migrate", async (req, res) => {
   try {
