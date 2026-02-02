@@ -54,9 +54,9 @@ export default function PublicTicket() {
                 }`}>
                 <div className={`h-2 w-full ${isValid ? 'bg-emerald-500' : 'bg-red-500'}`} />
 
-                <CardHeader className="text-center pb-8 pt-10 bg-slate-950 border-b border-slate-800">
+                <CardHeader className="text-center pb-8 pt-10 bg-emerald-950 border-b border-emerald-900">
                     <div className="mx-auto mb-6">
-                        <img src={logo} alt="Reserva Solar" className="h-32 mx-auto object-contain brightness-0 invert opacity-90" />
+                        <img src={logo} alt="Reserva Solar" className="h-20 mx-auto object-contain brightness-0 invert opacity-90" />
                     </div>
                     <CardTitle className="uppercase tracking-[0.3em] text-[10px] font-bold text-amber-500 shadow-black drop-shadow-sm">
                         Seu Ingresso Digital
