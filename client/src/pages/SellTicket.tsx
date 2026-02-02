@@ -26,6 +26,7 @@ export default function SellTicket() {
   const [customerName, setCustomerName] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
+  const [lastCustomer, setLastCustomer] = useState<{ name: string; phone: string }>({ name: "", phone: "" });
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
@@ -192,6 +193,7 @@ export default function SellTicket() {
         setSuccessMessage(`${tickets.length} ingresso(s) vendido(s) com sucesso!`);
       }
 
+      setLastCustomer({ name: customerName, phone: customerPhone });
       setSuccess(true);
       setCart([]);
       setCustomerName("");
@@ -523,8 +525,8 @@ export default function SellTicket() {
                       className="w-full bg-[#25D366] hover:bg-[#128C7E] text-white"
                       onClick={() => {
                         const link = `${window.location.origin}/ticket/${ticket.qrToken}`;
-                        const text = `Olá ${customerName ? customerName.split(' ')[0] : ''}! Aqui está o seu ingresso digital para o Reserva Solar: ${link}`;
-                        const whatsappUrl = `https://wa.me/${customerPhone ? '55' + customerPhone.replace(/\D/g, '') : ''}?text=${encodeURIComponent(text)}`;
+                        const text = `Olá ${lastCustomer.name ? lastCustomer.name.split(' ')[0] : ''}! Aqui está o seu ingresso digital para o Reserva Solar: ${link}`;
+                        const whatsappUrl = `https://wa.me/${lastCustomer.phone ? '55' + lastCustomer.phone.replace(/\D/g, '') : ''}?text=${encodeURIComponent(text)}`;
                         window.open(whatsappUrl, '_blank');
                       }}
                     >
