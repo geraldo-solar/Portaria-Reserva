@@ -1,7 +1,7 @@
 import express from "express";
-import { createExpressMiddleware } from "@trpc/server/adapters/express";
-import { appRouter } from "../server/routers";
-import { createContext } from "../server/_core/context";
+// import { createExpressMiddleware } from "@trpc/server/adapters/express";
+// import { appRouter } from "../server/routers";
+// import { createContext } from "../server/_core/context";
 
 const app = express();
 
@@ -14,29 +14,21 @@ app.get("/api/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
-// RAW DEBUG ENDPOINT
+// RAW DEBUG ENDPOINT (Pure Express, No Imports)
 app.post("/api/debug-create", (req, res) => {
-  try {
-    console.log("[RawDebug] Hit with body:", req.body);
-    // Force usage of context to ensure it's loaded
-    console.log("Context loaded:", typeof createContext);
-
-    res.json({
-      success: true,
-      message: "Raw endpoint worked (BUNDLED MONOLITH) - v" + new Date().getTime(),
-      received: req.body
-    });
-  } catch (e: any) {
-    console.error("[RawDebug] Error:", e);
-    res.status(500).json({ error: e.message });
-  }
+  console.log("[RawDebug] Hit (STRIPPED BUNDLE)");
+  res.json({
+    success: true,
+    message: "Raw endpoint worked (STRIPPED BUNDLE) - v" + new Date().getTime(),
+    received: req.body
+  });
 });
 
 // tRPC API
-app.all("/api/trpc/*", createExpressMiddleware({
-  router: appRouter,
-  createContext,
-}));
+// app.all("/api/trpc/*", createExpressMiddleware({
+//   router: appRouter,
+//   createContext,
+// }));
 
 // Catch all other /api routes
 app.all("/api/*", (req, res) => {
