@@ -18,6 +18,57 @@ import {
 
 
 
+
+function UserVerifyDiagnostic() {
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const verifyMutation = trpc.system.verifySubscriber.useMutation();
+
+  const handleVerify = () => {
+    verifyMutation.mutate({ email, phone });
+  };
+
+  return (
+    <div className="mb-6 p-4 rounded-lg border bg-amber-50 border-amber-200 text-amber-900">
+      <h3 className="font-bold flex items-center gap-2 mb-2">
+        <AlertCircle size={20} />
+        Diagnóstico de Usuário (ManyChat)
+      </h3>
+      <p className="text-sm mb-4">Teste se o ManyChat encontra seu usuário pelo E-mail ou Telefone.</p>
+
+      <div className="flex gap-4 mb-4">
+        <input
+          type="email"
+          placeholder="E-mail"
+          className="border p-2 rounded text-sm w-full"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+        />
+        <input
+          type="text"
+          placeholder="Telefone (ex: 11999999999)"
+          className="border p-2 rounded text-sm w-full"
+          value={phone}
+          onChange={e => setPhone(e.target.value)}
+        />
+        <button
+          onClick={handleVerify}
+          disabled={verifyMutation.isLoading}
+          className="bg-amber-600 text-white px-4 py-2 rounded text-sm font-bold hover:bg-amber-700 disabled:opacity-50"
+        >
+          {verifyMutation.isLoading ? "Verificando..." : "Verificar"}
+        </button>
+      </div>
+
+      {verifyMutation.data && (
+        <div className="bg-white p-3 rounded border border-amber-200 text-xs font-mono overflow-auto max-h-60">
+          <pre>{JSON.stringify(verifyMutation.data, null, 2)}</pre>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function ManageProducts() {
   const [, setLocation] = useLocation();
   const [formData, setFormData] = useState({
@@ -123,6 +174,7 @@ export default function ManageProducts() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <UserVerifyDiagnostic />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Formulário de Cadastro */}
