@@ -21,7 +21,7 @@ export async function createBrevoContact(
             FIRSTNAME: firstName,
             LASTNAME: lastName,
         },
-        listIds: [2],
+        listIds: [13],
         updateEnabled: true,
     };
 
