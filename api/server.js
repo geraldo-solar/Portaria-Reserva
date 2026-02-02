@@ -373,6 +373,8 @@ async function getTicketByQr(token) {
     validUntil: tickets.validUntil,
     usedAt: tickets.usedAt,
     customerName: customers.name,
+    customerPhone: customers.phone,
+    customerEmail: customers.email,
     createdAt: tickets.createdAt
   }).from(tickets).leftJoin(ticketTypes, eq(tickets.ticketTypeId, ticketTypes.id)).leftJoin(customers, eq(tickets.customerId, customers.id)).where(eq(tickets.qrToken, token)).limit(1);
   return result.length > 0 ? result[0] : null;
@@ -547,6 +549,8 @@ var appRouter = router({
       if (!ticket) return null;
       return {
         customerName: ticket.customerName,
+        customerPhone: ticket.customerPhone,
+        customerEmail: ticket.customerEmail,
         ticketTypeName: ticket.ticketTypeName,
         validUntil: ticket.validUntil,
         qrToken: ticket.qrToken,
@@ -656,7 +660,9 @@ var appRouter = router({
         qrToken: uuidv4(),
         validUntil: addHours(/* @__PURE__ */ new Date(), 12)
       });
-      const ticketId = ticketResult[0]?.insertId || 1;
+      const createdTicket = ticketResult[0];
+      if (!createdTicket) throw new Error("Failed to create ticket");
+      const ticketId = createdTicket.id;
       await logAuditAction("create", "ticket", ticketId, void 0, {
         customerName: input.customerName,
         ticketType: ticketType.name,
@@ -668,7 +674,10 @@ var appRouter = router({
         ticketTypeId: input.ticketTypeId,
         price: ticketType.price / 100,
         status: "active",
-        createdAt: /* @__PURE__ */ new Date()
+        createdAt: createdTicket.createdAt,
+        qrToken: createdTicket.qrToken,
+        // IMPORTANT: Return this for the frontend link
+        validUntil: createdTicket.validUntil
       };
     }),
     getById: publicProcedure.input(z2.number().int().positive()).query(async ({ input }) => {
@@ -1050,16 +1059,19 @@ app.get("/api/debug-db-check", async (req, res) => {
   try {
     const db = await getDb();
     if (!db) throw new Error("Database not initialized");
-    const result = await db.execute(sql2`SHOW TABLES`);
+    const result = await db.execute(sql2`SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'`);
     let schemaInfo = null;
     try {
-      schemaInfo = await db.execute(sql2`DESCRIBE ticketTypes`);
+      schemaInfo = await db.execute(sql2`SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'ticket_types'`);
     } catch (e) {
       schemaInfo = "Could not describe table (it may not exist)";
     }
     res.json({
       success: true,
       tables: result[0],
+      // Postgres returns rows in the rows property, but drizzle execute might return differently depending on driver. 
+      // node-postgres returns { rows: [], ... }. Drizzle's execute with node-postgres returns query result.
+      // Let's just return the whole result to inspect.
       ticketTypesSchema: schemaInfo
     });
   } catch (e) {
@@ -1077,6 +1089,92 @@ app.post("/api/debug-create", (req, res) => {
   } catch (e) {
     console.error("[RawDebug] Error:", e);
     res.status(500).json({ error: e.message });
+  }
+});
+app.get("/api/debug-tickets", async (req, res) => {
+  try {
+    const db = await getDb();
+    if (!db) throw new Error("DB not init");
+    const result = await db.execute(sql2`SELECT * FROM "tickets" ORDER BY id DESC`);
+    res.json({ count: result.rowCount || 0, tickets: result.rows || [] });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+app.get("/api/debug-migrate", async (req, res) => {
+  try {
+    const db = await getDb();
+    if (!db) throw new Error("Database not initialized");
+    console.log("[Migration] Starting...");
+    await db.execute(sql2`CREATE TYPE "public"."payment_method" AS ENUM('dinheiro', 'pix', 'cartao')`);
+    await db.execute(sql2`CREATE TYPE "public"."role" AS ENUM('user', 'admin')`);
+    await db.execute(sql2`CREATE TYPE "public"."status" AS ENUM('active', 'cancelled', 'used')`);
+    await db.execute(sql2`
+      CREATE TABLE IF NOT EXISTS "audit_log" (
+        "id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+        "action" varchar(100) NOT NULL,
+        "entity_type" varchar(100) NOT NULL,
+        "entity_id" integer NOT NULL,
+        "user_id" integer,
+        "details" text,
+        "created_at" timestamp DEFAULT now() NOT NULL
+      )
+    `);
+    await db.execute(sql2`
+      CREATE TABLE IF NOT EXISTS "customers" (
+        "id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+        "name" varchar(255) NOT NULL,
+        "email" varchar(320),
+        "phone" varchar(20),
+        "created_at" timestamp DEFAULT now() NOT NULL
+      )
+    `);
+    await db.execute(sql2`
+      CREATE TABLE IF NOT EXISTS "ticket_types" (
+        "id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+        "name" varchar(255) NOT NULL,
+        "description" text,
+        "price" integer NOT NULL,
+        "created_at" timestamp DEFAULT now() NOT NULL
+      )
+    `);
+    await db.execute(sql2`
+      CREATE TABLE IF NOT EXISTS "tickets" (
+        "id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+        "customer_id" integer NOT NULL,
+        "ticket_type_id" integer NOT NULL,
+        "price" integer NOT NULL,
+        "payment_method" "payment_method" NOT NULL,
+        "status" "status" DEFAULT 'active' NOT NULL,
+        "cancelled_at" timestamp,
+        "cancellation_reason" text,
+        "printed_at" timestamp,
+        "used_at" timestamp,
+        "qr_token" varchar(255),
+        "valid_until" timestamp,
+        "created_at" timestamp DEFAULT now() NOT NULL,
+        "updated_at" timestamp DEFAULT now() NOT NULL,
+        CONSTRAINT "tickets_qr_token_unique" UNIQUE("qr_token")
+      )
+    `);
+    await db.execute(sql2`
+      CREATE TABLE IF NOT EXISTS "users" (
+        "id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+        "open_id" varchar(64) NOT NULL,
+        "name" text,
+        "email" varchar(320),
+        "login_method" varchar(64),
+        "role" "role" DEFAULT 'user' NOT NULL,
+        "created_at" timestamp DEFAULT now() NOT NULL,
+        "updated_at" timestamp DEFAULT now() NOT NULL,
+        "last_signed_in" timestamp DEFAULT now() NOT NULL,
+        CONSTRAINT "users_open_id_unique" UNIQUE("open_id")
+      )
+    `);
+    res.json({ success: true, message: "Migration executed successfully" });
+  } catch (e) {
+    console.error("[Migration] Error:", e);
+    res.status(200).json({ error: e.message, warning: "Some parts might have already run" });
   }
 });
 app.all("/api/trpc/*", createExpressMiddleware({

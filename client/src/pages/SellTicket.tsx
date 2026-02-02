@@ -72,43 +72,19 @@ export default function SellTicket() {
     const ticketType = ticketTypes.find((t) => t.id === ticketTypeId);
     if (!ticketType) return;
 
-    const existingItem = cart.find((item) => item.ticketTypeId === ticketTypeId);
-
-    if (existingItem) {
-      setCart(
-        cart.map((item) =>
-          item.ticketTypeId === ticketTypeId
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
-        )
-      );
-    } else {
-      setCart([
-        ...cart,
-        {
-          ticketTypeId: ticketType.id,
-          ticketTypeName: ticketType.name,
-          price: ticketType.price,
-          quantity: 1,
-        },
-      ]);
-    }
-  };
-
-  const handleUpdateQuantity = (ticketTypeId: number, delta: number) => {
-    setCart(
-      cart
-        .map((item) =>
-          item.ticketTypeId === ticketTypeId
-            ? { ...item, quantity: Math.max(0, item.quantity + delta) }
-            : item
-        )
-        .filter((item) => item.quantity > 0)
-    );
+    // SINGLE TICKET MODE: Replace cart effectively
+    setCart([
+      {
+        ticketTypeId: ticketType.id,
+        ticketTypeName: ticketType.name,
+        price: ticketType.price,
+        quantity: 1,
+      },
+    ]);
   };
 
   const handleRemoveFromCart = (ticketTypeId: number) => {
-    setCart(cart.filter((item) => item.ticketTypeId !== ticketTypeId));
+    setCart([]);
   };
 
   const getTotalAmount = () => {
@@ -386,31 +362,8 @@ export default function SellTicket() {
                               </div>
 
                               <div>
-                                <label className="block text-xs font-medium text-emerald-800 mb-2">
-                                  Quantidade
-                                </label>
-                                <div className="flex items-center gap-2">
-                                  <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handleUpdateQuantity(item.ticketTypeId, -1)}
-                                    className="h-8 w-8 p-0"
-                                  >
-                                    <Minus size={16} />
-                                  </Button>
-                                  <span className="text-lg font-bold text-emerald-900 min-w-[3ch] text-center">
-                                    {item.quantity}
-                                  </span>
-                                  <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handleUpdateQuantity(item.ticketTypeId, 1)}
-                                    className="h-8 w-8 p-0"
-                                  >
-                                    <Plus size={16} />
-                                  </Button>
+                                <div className="text-sm font-medium text-emerald-900">
+                                  1 Ingresso
                                 </div>
                               </div>
 
