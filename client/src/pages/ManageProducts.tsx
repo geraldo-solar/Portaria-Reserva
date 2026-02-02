@@ -16,6 +16,39 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
+function ManyChatDiagnostic() {
+  const { data: status } = trpc.system.manychatDebug.useQuery();
+
+  if (!status) return null;
+
+  return (
+    <div className={`mb-6 p-4 rounded-lg border ${status.apiWorks ? 'bg-blue-50 border-blue-200 text-blue-800' : 'bg-red-50 border-red-200 text-red-800'}`}>
+      <h3 className="font-bold flex items-center gap-2">
+        {status.apiWorks ? <CheckCircle size={20} /> : <AlertCircle size={20} />}
+        Status do ManyChat
+      </h3>
+      <div className="mt-2 text-sm">
+        <p>Token Detectado: <strong>{status.hasKey ? "Sim" : "Não"}</strong></p>
+        <p>Conexão API: <strong>{status.apiWorks ? "OK" : "Falhou"}</strong></p>
+        {status.error && <p className="mt-1 font-mono text-xs bg-white/50 p-1 rounded">Erro: {status.error}</p>}
+
+        {status.tags && status.tags.length > 0 && (
+          <div className="mt-3">
+            <p className="font-semibold mb-1">Tags Encontradas ({status.tags.length}):</p>
+            <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
+              {status.tags.map((t: any) => (
+                <span key={t.id} className="bg-white/60 px-2 py-1 rounded text-xs border border-blue-100">
+                  {t.name} (ID: {t.id})
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function ManageProducts() {
   const [, setLocation] = useLocation();
   const [formData, setFormData] = useState({
@@ -121,7 +154,7 @@ export default function ManageProducts() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-
+        <ManyChatDiagnostic />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Formulário de Cadastro */}

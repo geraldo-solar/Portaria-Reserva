@@ -50,4 +50,35 @@ export const systemRouter = router({
 
     return { hasKey, apiWorks, error };
   }),
+
+  manychatDebug: publicProcedure.query(async () => {
+    const { ENV } = await import("./env");
+    const hasKey = !!ENV.manychatApiToken;
+    let apiWorks = false;
+    let tags: any[] = [];
+    let error = null;
+
+    if (hasKey) {
+      try {
+        const res = await fetch("https://api.manychat.com/fb/page/getTags", {
+          method: "GET",
+          headers: {
+            "accept": "application/json",
+            "Authorization": `Bearer ${ENV.manychatApiToken}`,
+          }
+        });
+
+        if (res.ok) {
+          apiWorks = true;
+          const data = await res.json();
+          tags = data.data || [];
+        } else {
+          error = `Status: ${res.status} - ${await res.text()}`;
+        }
+      } catch (e: any) {
+        error = e.message;
+      }
+    }
+    return { hasKey, apiWorks, tags, error };
+  }),
 });
