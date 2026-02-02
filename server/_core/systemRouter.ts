@@ -81,4 +81,19 @@ export const systemRouter = router({
     }
     return { hasKey, apiWorks, tags, error };
   }),
+
+  manychatTest: publicProcedure.mutation(async () => {
+    const { createManyChatSubscriber } = await import("../services/manychat");
+
+    try {
+      const result = await createManyChatSubscriber(
+        "Teste Diagnostico",
+        "teste@diagnostico.com",
+        "+5511999999999" // Dummy valid number
+      );
+      return { success: true, result };
+    } catch (e: any) {
+      return { success: false, error: e.message };
+    }
+  }),
 });

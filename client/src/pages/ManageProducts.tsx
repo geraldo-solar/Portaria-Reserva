@@ -53,8 +53,34 @@ function ManyChatDiagnostic() {
             </div>
           </div>
         )}
+
+        <div className="mt-4 pt-4 border-t border-blue-200">
+          <TestManyChatButton />
+        </div>
       </div>
     </div>
+  );
+}
+
+function TestManyChatButton() {
+  const utils = trpc.useContext();
+  const testMutation = trpc.system.manychatTest.useMutation({
+    onSuccess: (data) => {
+      alert(`Teste concluído!\nResultado: ${JSON.stringify(data, null, 2)}`);
+    },
+    onError: (err) => {
+      alert(`Erro no teste: ${err.message}`);
+    }
+  });
+
+  return (
+    <button
+      onClick={() => testMutation.mutate()}
+      disabled={testMutation.isLoading}
+      className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 disabled:opacity-50"
+    >
+      {testMutation.isLoading ? "Testando..." : "Testar Integração (Criar Lead de Teste)"}
+    </button>
   );
 }
 
