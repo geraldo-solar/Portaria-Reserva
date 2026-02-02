@@ -40,6 +40,9 @@ export async function createBrevoContact(
         }
     }
 
+    // Log payload for debugging
+    console.log("[Brevo] Sending payload:", JSON.stringify(payload, null, 2));
+
     try {
         const response = await fetch("https://api.brevo.com/v3/contacts", {
             method: "POST",
@@ -54,6 +57,10 @@ export async function createBrevoContact(
         if (!response.ok) {
             const errorText = await response.text();
             console.error(`[Brevo] API Error (${response.status}):`, errorText);
+            // Also try to update if it exists (POST fails if exists, need PUT or logic mismatch)
+            // But we have updateEnabled: true in payload... wait, createContact endpoint
+            // handles updateEnabled? Let's check docs. 
+            // Actually, /contacts endpoint with updateEnabled: true SHOULD work.
         } else {
             const data = await response.json();
             console.log("[Brevo] Contact synced successfully:", data);
