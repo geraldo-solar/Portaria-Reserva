@@ -16,73 +16,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
-function ManyChatDiagnostic() {
-  const { data: status } = trpc.system.manychatDebug.useQuery();
 
-  if (!status) return null;
-
-  const targetTag = "Passante Reserva";
-  const foundTag = status.tags?.find((t: any) => t.name.toLowerCase() === targetTag.toLowerCase());
-
-  return (
-    <div className={`mb-6 p-4 rounded-lg border ${status.apiWorks ? 'bg-blue-50 border-blue-200 text-blue-800' : 'bg-red-50 border-red-200 text-red-800'}`}>
-      <h3 className="font-bold flex items-center gap-2">
-        {status.apiWorks ? <CheckCircle size={20} /> : <AlertCircle size={20} />}
-        Status do ManyChat
-      </h3>
-      <div className="mt-2 text-sm">
-        <p>Token Detectado: <strong>{status.hasKey ? "Sim" : "Não"}</strong></p>
-        <p>Conexão API: <strong>{status.apiWorks ? "OK" : "Falhou"}</strong></p>
-        {status.error && <p className="mt-1 font-mono text-xs bg-white/50 p-1 rounded">Erro: {status.error}</p>}
-
-        <div className={`mt-3 p-2 rounded border ${foundTag ? 'bg-green-100 border-green-300 text-green-800' : 'bg-amber-100 border-amber-300 text-amber-800'}`}>
-          <p className="font-bold">Tag Alvo: "{targetTag}"</p>
-          <p>Status: {foundTag ? `✅ ENCONTRADA (ID: ${foundTag.id})` : "❌ NÃO ENCONTRADA NA LISTA"}</p>
-          {foundTag && foundTag.name !== targetTag && <p className="text-xs mt-1">(Nome exato encontrado: "{foundTag.name}")</p>}
-        </div>
-
-        {status.tags && status.tags.length > 0 && (
-          <div className="mt-3 opacity-75">
-            <p className="font-semibold mb-1">Todas as Tags ({status.tags.length}):</p>
-            <div className="flex flex-wrap gap-2 max-h-32 overflow-y-auto">
-              {status.tags.map((t: any) => (
-                <span key={t.id} className="bg-white/60 px-2 py-1 rounded text-xs border border-blue-100">
-                  {t.name} (ID: {t.id})
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <div className="mt-4 pt-4 border-t border-blue-200">
-          <TestManyChatButton />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function TestManyChatButton() {
-  const utils = trpc.useContext();
-  const testMutation = trpc.system.manychatTest.useMutation({
-    onSuccess: (data) => {
-      alert(`Teste concluído!\nResultado: ${JSON.stringify(data, null, 2)}`);
-    },
-    onError: (err) => {
-      alert(`Erro no teste: ${err.message}`);
-    }
-  });
-
-  return (
-    <button
-      onClick={() => testMutation.mutate()}
-      disabled={testMutation.isLoading}
-      className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 disabled:opacity-50"
-    >
-      {testMutation.isLoading ? "Testando..." : "Testar Integração (Criar Lead de Teste)"}
-    </button>
-  );
-}
 
 export default function ManageProducts() {
   const [, setLocation] = useLocation();
@@ -189,7 +123,6 @@ export default function ManageProducts() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <ManyChatDiagnostic />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Formulário de Cadastro */}
