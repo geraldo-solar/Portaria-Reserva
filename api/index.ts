@@ -14,6 +14,21 @@ app.get("/api/health", (req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
+// RAW DEBUG ENDPOINT
+app.post("/api/debug-create", (req, res) => {
+  try {
+    console.log("[RawDebug] Hit with body:", req.body);
+    res.json({
+      success: true,
+      message: "Raw endpoint worked!",
+      received: req.body
+    });
+  } catch (e: any) {
+    console.error("[RawDebug] Error:", e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
 // tRPC API
 app.all("/api/trpc/*", createExpressMiddleware({
   router: appRouter,
