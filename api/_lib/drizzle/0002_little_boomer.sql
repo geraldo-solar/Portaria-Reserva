@@ -1,0 +1,1 @@
+ALTER TABLE `tickets` ADD `paymentMethod` enum('dinheiro','pix','cartao') NOT NULL;

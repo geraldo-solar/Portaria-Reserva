@@ -1,7 +1,8 @@
 import express from "express";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
-import { appRouter } from "../server/routers";
-import { createContext } from "../server/_core/context";
+// Use local _lib copies to ensure Vercel bundles them correctly
+import { appRouter } from "./_lib/server/routers";
+import { createContext } from "./_lib/server/_core/context";
 
 const app = express();
 
@@ -23,7 +24,7 @@ app.post("/api/debug-create", (req, res) => {
 
     res.json({
       success: true,
-      message: "Raw endpoint worked (FULL RESTORED 2.0) - v" + new Date().getTime(),
+      message: "Raw endpoint worked (LOCAL_LIB STRATEGY) - v" + new Date().getTime(),
       received: req.body
     });
   } catch (e: any) {
