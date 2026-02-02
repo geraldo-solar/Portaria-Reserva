@@ -14,7 +14,7 @@ app.use(express.json());
 app.post("/api/debug-create", (req, res) => {
   res.json({
     success: true,
-    message: "FORCE UPDATE PROBE - v" + new Date().getTime(),
+    message: "REVERTED VERCEL JSON PROBE - v" + new Date().getTime(),
   });
 });
 
