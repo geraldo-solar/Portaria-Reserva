@@ -24,7 +24,6 @@ export async function createManyChatSubscriber(
     };
 
     if (phone) {
-        // Sanitize phone (Reuse same logic as Brevo for E.164)
         const hasPlus = phone.trim().startsWith("+");
         let cleanPhone = phone.replace(/\D/g, "");
 
@@ -41,6 +40,9 @@ export async function createManyChatSubscriber(
     }
 
     try {
+        let subscriberId: string | number | null = null;
+
+        // 1. Try to create the subscriber
         const response = await fetch("https://api.manychat.com/fb/subscriber/createSubscriber", {
             method: "POST",
             headers: {
@@ -51,86 +53,120 @@ export async function createManyChatSubscriber(
             body: JSON.stringify(payload),
         });
 
-        if (!response.ok) {
-            console.error(`[ManyChat] API Error (${response.status}): ${await response.text()}`);
-        } else {
+        if (response.ok) {
             const data = await response.json();
-
-            // If creation successful, add the "Passante Reserva" tag
             if (data.status === "success" && data.data?.id) {
-                const subscriberId = data.data.id;
-                try {
-                    console.log("[ManyChat] Ensuring tag 'Passante Reserva' exists...");
+                subscriberId = data.data.id;
+            }
+        } else {
+            console.warn(`[ManyChat] Creation failed (likely exists), trying to find user... Status: ${response.status}`);
 
-                    // 1. Get all tags to find ID
-                    const tagsResponse = await fetch("https://api.manychat.com/fb/page/getTags", {
-                        method: "GET",
-                        headers: {
-                            "accept": "application/json",
-                            "Authorization": `Bearer ${ENV.manychatApiToken}`,
-                        }
-                    });
-
-                    let tagId: number | null = null;
-                    if (tagsResponse.ok) {
-                        const tagsData = await tagsResponse.json();
-                        // ManyChat returns { status: "success", data: [ { id, name } ] }
-                        if (tagsData.data && Array.isArray(tagsData.data)) {
-                            const existingTag = tagsData.data.find((t: any) => t.name === "Passante Reserva");
-                            if (existingTag) {
-                                tagId = existingTag.id;
-                            }
-                        }
+            // 2. If creation failed, try to find the subscriber by Email or Phone
+            if (email) {
+                const findRes = await fetch(`https://api.manychat.com/fb/subscriber/findByInfo?email=${encodeURIComponent(email)}`, {
+                    method: "GET",
+                    headers: {
+                        "accept": "application/json",
+                        "Authorization": `Bearer ${ENV.manychatApiToken}`,
                     }
-
-                    // 2. If tag doesn't exist, try to create it (fallback)
-                    if (!tagId) {
-                        console.log("[ManyChat] Tag not found, attempting to create 'Passante Reserva'...");
-                        const createTagRes = await fetch("https://api.manychat.com/fb/page/createTag", {
-                            method: "POST",
-                            headers: {
-                                "accept": "application/json",
-                                "Authorization": `Bearer ${ENV.manychatApiToken}`,
-                                "content-type": "application/json",
-                            },
-                            body: JSON.stringify({ name: "Passante Reserva" })
-                        });
-                        if (createTagRes.ok) {
-                            const createData = await createTagRes.json();
-                            if (createData.data?.id) {
-                                tagId = createData.data.id;
-                            }
-                        } else {
-                            const errText = await createTagRes.text();
-                            console.error(`[ManyChat] Failed to create tag: ${errText}`);
-                        }
+                });
+                if (findRes.ok) {
+                    const findData = await findRes.json();
+                    if (findData.status === "success" && findData.data?.id) {
+                        subscriberId = findData.data.id;
+                        console.log(`[ManyChat] Found existing subscriber by email: ${subscriberId}`);
                     }
-
-                    // 3. Add tag by ID
-                    if (tagId) {
-                        console.log(`[ManyChat] Adding tag ID ${tagId} to subscriber ${subscriberId}...`);
-                        await fetch("https://api.manychat.com/fb/subscriber/addTag", {
-                            method: "POST",
-                            headers: {
-                                "accept": "application/json",
-                                "Authorization": `Bearer ${ENV.manychatApiToken}`,
-                                "content-type": "application/json",
-                            },
-                            body: JSON.stringify({
-                                subscriber_id: subscriberId,
-                                tag_id: tagId
-                            }),
-                        });
-                    } else {
-                        console.error("[ManyChat] Could not resolve Tag ID for 'Passante Reserva'");
-                    }
-                } catch (tagError: any) {
-                    console.error("[ManyChat] Failed to process tag:", tagError.message);
                 }
             }
 
-            return data;
+            // If still not found and we have a phone, try phone
+            if (!subscriberId && payload.phone) {
+                const findRes = await fetch(`https://api.manychat.com/fb/subscriber/findByInfo?phone=${encodeURIComponent(payload.phone)}`, {
+                    method: "GET",
+                    headers: {
+                        "accept": "application/json",
+                        "Authorization": `Bearer ${ENV.manychatApiToken}`,
+                    }
+                });
+                if (findRes.ok) {
+                    const findData = await findRes.json();
+                    if (findData.status === "success" && findData.data?.id) {
+                        subscriberId = findData.data.id;
+                        console.log(`[ManyChat] Found existing subscriber by phone: ${subscriberId}`);
+                    }
+                }
+            }
         }
+
+        // 3. Apply Tag if we have a Subscriber ID
+        if (subscriberId) {
+            try {
+                // Get Tag ID logic (cached or fetched)
+                // Note: Ideally caching this ID would be better, but for now fetching is safer
+                console.log("[ManyChat] Ensuring tag 'Passante Reserva' exists...");
+
+                const tagsResponse = await fetch("https://api.manychat.com/fb/page/getTags", {
+                    method: "GET",
+                    headers: {
+                        "accept": "application/json",
+                        "Authorization": `Bearer ${ENV.manychatApiToken}`,
+                    }
+                });
+
+                let tagId: number | null = null;
+                if (tagsResponse.ok) {
+                    const tagsData = await tagsResponse.json();
+                    if (tagsData.data && Array.isArray(tagsData.data)) {
+                        const existingTag = tagsData.data.find((t: any) => t.name.toLowerCase() === "passante reserva");
+                        if (existingTag) {
+                            tagId = existingTag.id;
+                        }
+                    }
+                }
+
+                if (!tagId) {
+                    console.log("[ManyChat] Tag not found, creating 'Passante Reserva'...");
+                    const createTagRes = await fetch("https://api.manychat.com/fb/page/createTag", {
+                        method: "POST",
+                        headers: {
+                            "accept": "application/json",
+                            "Authorization": `Bearer ${ENV.manychatApiToken}`,
+                            "content-type": "application/json",
+                        },
+                        body: JSON.stringify({ name: "Passante Reserva" })
+                    });
+                    if (createTagRes.ok) {
+                        const createData = await createTagRes.json();
+                        if (createData.data?.id) {
+                            tagId = createData.data.id;
+                        }
+                    }
+                }
+
+                if (tagId) {
+                    console.log(`[ManyChat] Adding tag ID ${tagId} to subscriber ${subscriberId}...`);
+                    await fetch("https://api.manychat.com/fb/subscriber/addTag", {
+                        method: "POST",
+                        headers: {
+                            "accept": "application/json",
+                            "Authorization": `Bearer ${ENV.manychatApiToken}`,
+                            "content-type": "application/json",
+                        },
+                        body: JSON.stringify({
+                            subscriber_id: subscriberId,
+                            tag_id: tagId
+                        }),
+                    });
+                } else {
+                    console.error("[ManyChat] Could not resolve Tag ID for 'Passante Reserva'");
+                }
+            } catch (tagError: any) {
+                console.error("[ManyChat] Failed to process tag:", tagError.message);
+            }
+        } else {
+            console.error("[ManyChat] Could not create OR find subscriber. Data sync failed.");
+        }
+
     } catch (error: any) {
         console.error("[ManyChat] Sync failed:", error.message);
     }
