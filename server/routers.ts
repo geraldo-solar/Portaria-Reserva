@@ -191,7 +191,11 @@ export const appRouter = router({
           validUntil: addHours(new Date(), 12),
         });
 
-        const ticketId = (ticketResult[0]?.insertId as number) || 1;
+        // Postgres returns the row directly
+        const createdTicket = ticketResult[0];
+        if (!createdTicket) throw new Error("Failed to create ticket");
+
+        const ticketId = createdTicket.id;
 
         await logAuditAction("create", "ticket", ticketId, undefined, {
           customerName: input.customerName,
@@ -205,7 +209,9 @@ export const appRouter = router({
           ticketTypeId: input.ticketTypeId,
           price: ticketType.price / 100,
           status: "active",
-          createdAt: new Date(),
+          createdAt: createdTicket.createdAt,
+          qrToken: createdTicket.qrToken, // IMPORTANT: Return this for the frontend link
+          validUntil: createdTicket.validUntil
         };
       }),
 
