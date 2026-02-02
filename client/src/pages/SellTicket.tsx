@@ -23,6 +23,9 @@ export default function SellTicket() {
   const [, setLocation] = useLocation();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [paymentMethod, setPaymentMethod] = useState<"dinheiro" | "pix" | "cartao">("dinheiro");
+  const [customerName, setCustomerName] = useState("");
+  const [customerEmail, setCustomerEmail] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
@@ -176,7 +179,9 @@ export default function SellTicket() {
         for (const item of cart) {
           for (let i = 0; i < item.quantity; i++) {
             const ticket = await createTicketMutation.mutateAsync({
-              customerName: `Cliente ${Date.now()}`,
+              customerName: customerName || `Cliente ${Date.now()}`,
+              customerEmail: customerEmail || undefined,
+              customerPhone: customerPhone || undefined,
               ticketTypeId: item.ticketTypeId,
               paymentMethod: paymentMethod,
             });
@@ -189,6 +194,9 @@ export default function SellTicket() {
 
       setSuccess(true);
       setCart([]);
+      setCustomerName("");
+      setCustomerEmail("");
+      setCustomerPhone("");
       setPaymentMethod("dinheiro");
 
       // Iniciar processo de impressão
@@ -288,14 +296,62 @@ export default function SellTicket() {
             </Card>
           </div>
 
-          {/* Carrinho e Resumo */}
+          {/* Carrinho, Dados do Cliente e Resumo */}
           <div className="lg:col-span-1">
             <Card className="sticky top-6">
               <CardHeader>
-                <CardTitle>Carrinho</CardTitle>
+                <CardTitle>Dados da Venda</CardTitle>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-4">
+
+                  {/* Dados do Cliente */}
+                  <div className="space-y-3 p-4 bg-gray-50 rounded-lg border border-gray-100">
+                    <h3 className="font-medium text-emerald-900 text-sm flex items-center gap-2">
+                      👤 Cadastro do Cliente
+                    </h3>
+
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Nome Completo *</label>
+                      <input
+                        type="text"
+                        required
+                        className="w-full text-sm p-2 border rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                        placeholder="Ex: João Silva"
+                        value={customerName}
+                        onChange={(e) => setCustomerName(e.target.value)}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-2">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">WhatsApp (com DDD)</label>
+                        <input
+                          type="tel"
+                          className="w-full text-sm p-2 border rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                          placeholder="Ex: 81999998888"
+                          value={customerPhone}
+                          onChange={(e) => setCustomerPhone(e.target.value)}
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">Email (Opcional)</label>
+                        <input
+                          type="email"
+                          className="w-full text-sm p-2 border rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                          placeholder="joao@email.com"
+                          value={customerEmail}
+                          onChange={(e) => setCustomerEmail(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="border-t pt-4">
+                    <h3 className="font-medium text-emerald-900 text-sm mb-3">🛒 Resumo do Pedido</h3>
+                  </div>
+
                   {cart.length === 0 ? (
                     <div className="text-center py-8 text-gray-500">
                       Carrinho vazio
@@ -467,8 +523,9 @@ export default function SellTicket() {
                       className="w-full bg-[#25D366] hover:bg-[#128C7E] text-white"
                       onClick={() => {
                         const link = `${window.location.origin}/ticket/${ticket.qrToken}`;
-                        const text = `Olá! Aqui está o seu ingresso digital para o Reserva Solar: ${link}`;
-                        window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+                        const text = `Olá ${customerName ? customerName.split(' ')[0] : ''}! Aqui está o seu ingresso digital para o Reserva Solar: ${link}`;
+                        const whatsappUrl = `https://wa.me/${customerPhone ? '55' + customerPhone.replace(/\D/g, '') : ''}?text=${encodeURIComponent(text)}`;
+                        window.open(whatsappUrl, '_blank');
                       }}
                     >
                       <Share2 className="mr-2" size={18} />
