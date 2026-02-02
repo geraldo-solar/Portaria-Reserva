@@ -1,6 +1,6 @@
 import express from "express";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
-// import { appRouter } from "../server/routers";
+import { appRouter } from "../server/routers";
 import { createContext } from "../server/_core/context";
 
 const app = express();
@@ -18,15 +18,10 @@ app.get("/api/health", (req, res) => {
 // RAW DEBUG ENDPOINT
 app.post("/api/debug-create", (req, res) => {
   try {
-    console.log("[RawDebug] Hit (CONTEXT PROBE)");
-    // Force usage of context to trigger imports
-    console.log("Context loaded:", typeof createContext);
-
-    // We are NOT using appRouter yet to keep it isolated
-
+    console.log("[RawDebug] Hit (FULL RESTORE)");
     res.json({
       success: true,
-      message: "Raw endpoint worked (CONTEXT PROBE) - v" + new Date().getTime(),
+      message: "Raw endpoint worked (FULL RESTORE) - v" + new Date().getTime(),
       received: req.body
     });
   } catch (e: any) {
@@ -35,11 +30,11 @@ app.post("/api/debug-create", (req, res) => {
   }
 });
 
-// tRPC API - DISABLED for this probe, only testing if context loads
-// app.all("/api/trpc/*", createExpressMiddleware({
-//   router: appRouter,
-//   createContext,
-// }));
+// tRPC API
+app.all("/api/trpc/*", createExpressMiddleware({
+  router: appRouter,
+  createContext,
+}));
 
 // Catch all other /api routes
 app.all("/api/*", (req, res) => {
