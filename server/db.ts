@@ -1,7 +1,10 @@
 import { eq, sql } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/mysql2";
+import { drizzle } from "drizzle-orm/node-postgres";
+import pg from "pg";
 import { InsertUser, users, customers, ticketTypes, tickets, auditLog, InsertCustomer, InsertTicket, InsertAuditLog, InsertTicketType } from "../drizzle/schema";
 import { ENV } from './_core/env';
+
+const { Pool } = pg;
 
 let _db: ReturnType<typeof drizzle> | null = null;
 
@@ -9,7 +12,11 @@ let _db: ReturnType<typeof drizzle> | null = null;
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
-      _db = drizzle(process.env.DATABASE_URL);
+      const pool = new Pool({
+        connectionString: process.env.DATABASE_URL,
+        ssl: { rejectUnauthorized: false } // Required for Vercel/Neon Postgres
+      });
+      _db = drizzle(pool);
     } catch (error) {
       console.warn("[Database] Failed to connect:", error);
       _db = null;
@@ -68,7 +75,9 @@ export async function upsertUser(user: InsertUser): Promise<void> {
       updateSet.lastSignedIn = new Date();
     }
 
-    await db.insert(users).values(values).onDuplicateKeyUpdate({
+    // PostgreSQL specific upsert
+    await db.insert(users).values(values).onConflictDoUpdate({
+      target: users.openId,
       set: updateSet,
     });
   } catch (error) {
@@ -96,7 +105,7 @@ export async function createCustomer(customer: InsertCustomer) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  const result = await db.insert(customers).values(customer);
+  const result = await db.insert(customers).values(customer).returning();
   return result;
 }
 
@@ -128,7 +137,7 @@ export async function createTicket(ticket: InsertTicket) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  const result = await db.insert(tickets).values(ticket);
+  const result = await db.insert(tickets).values(ticket).returning();
   return result;
 }
 
@@ -150,7 +159,7 @@ export async function createTicketType(type: InsertTicketType) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  const result = await db.insert(ticketTypes).values(type);
+  const result = await db.insert(ticketTypes).values(type).returning();
   return result;
 }
 
