@@ -38,13 +38,13 @@ export default function Scanner() {
 
                     try {
                         const result = await validateMutation.mutateAsync({ token: decodedText });
+                        /* eslint-disable-next-line */
+                        // @ts-ignore
                         setScanResult({
+                            ...result,
                             status: result.status,
-                            message: result.message,
-                            customer: result.ticket?.customerName || (result as any).customer,
-                            ticket: result.ticket,
-                            ...result
-                        } as any);
+                            timestamp: new Date().toISOString()
+                        });
                     } catch (error) {
                         setScanResult({
                             status: "invalid",
