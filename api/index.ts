@@ -61,6 +61,94 @@ app.post("/api/debug-create", (req, res) => {
   }
 });
 
+// AUTO MIGRATION ENDPOINT (Temporary)
+app.get("/api/debug-migrate", async (req, res) => {
+  try {
+    const db = await getDb();
+    if (!db) throw new Error("Database not initialized");
+
+    console.log("[Migration] Starting...");
+
+    // Execute DDL statements one by one
+    await db.execute(sql`CREATE TYPE "public"."payment_method" AS ENUM('dinheiro', 'pix', 'cartao')`);
+    await db.execute(sql`CREATE TYPE "public"."role" AS ENUM('user', 'admin')`);
+    await db.execute(sql`CREATE TYPE "public"."status" AS ENUM('active', 'cancelled', 'used')`);
+
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS "audit_log" (
+        "id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+        "action" varchar(100) NOT NULL,
+        "entity_type" varchar(100) NOT NULL,
+        "entity_id" integer NOT NULL,
+        "user_id" integer,
+        "details" text,
+        "created_at" timestamp DEFAULT now() NOT NULL
+      )
+    `);
+
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS "customers" (
+        "id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+        "name" varchar(255) NOT NULL,
+        "email" varchar(320),
+        "phone" varchar(20),
+        "created_at" timestamp DEFAULT now() NOT NULL
+      )
+    `);
+
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS "ticket_types" (
+        "id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+        "name" varchar(255) NOT NULL,
+        "description" text,
+        "price" integer NOT NULL,
+        "created_at" timestamp DEFAULT now() NOT NULL
+      )
+    `);
+
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS "tickets" (
+        "id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+        "customer_id" integer NOT NULL,
+        "ticket_type_id" integer NOT NULL,
+        "price" integer NOT NULL,
+        "payment_method" "payment_method" NOT NULL,
+        "status" "status" DEFAULT 'active' NOT NULL,
+        "cancelled_at" timestamp,
+        "cancellation_reason" text,
+        "printed_at" timestamp,
+        "used_at" timestamp,
+        "qr_token" varchar(255),
+        "valid_until" timestamp,
+        "created_at" timestamp DEFAULT now() NOT NULL,
+        "updated_at" timestamp DEFAULT now() NOT NULL,
+        CONSTRAINT "tickets_qr_token_unique" UNIQUE("qr_token")
+      )
+    `);
+
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS "users" (
+        "id" integer PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+        "open_id" varchar(64) NOT NULL,
+        "name" text,
+        "email" varchar(320),
+        "login_method" varchar(64),
+        "role" "role" DEFAULT 'user' NOT NULL,
+        "created_at" timestamp DEFAULT now() NOT NULL,
+        "updated_at" timestamp DEFAULT now() NOT NULL,
+        "last_signed_in" timestamp DEFAULT now() NOT NULL,
+        CONSTRAINT "users_open_id_unique" UNIQUE("open_id")
+      )
+    `);
+
+    res.json({ success: true, message: "Migration executed successfully" });
+  } catch (e: any) {
+    console.error("[Migration] Error:", e);
+    // Ignore errors if types already exist
+    res.status(200).json({ error: e.message, warning: "Some parts might have already run" });
+  }
+});
+
 // tRPC API
 app.all("/api/trpc/*", createExpressMiddleware({
   router: appRouter,
