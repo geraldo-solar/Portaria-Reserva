@@ -2,8 +2,9 @@ import express from "express";
 // import { createExpressMiddleware } from "@trpc/server/adapters/express";
 // import { appRouter } from "../server/routers";
 // import { createContext } from "../server/_core/context";
-import { getDb } from "../server/db";
-import { ENV } from "../server/_core/env";
+// import { getDb } from "../server/db";
+// import { ENV } from "../server/_core/env";
+import * as schema from "../drizzle/schema";
 
 const app = express();
 
@@ -21,12 +22,11 @@ app.post("/api/debug-create", (req, res) => {
   try {
     console.log("[RawDebug] Hit with body:", req.body);
     // Debug imports
-    console.log("ENV loaded, AppID:", ENV.appId);
-    console.log("getDb loaded type:", typeof getDb);
+    console.log("Schema keys:", Object.keys(schema));
 
     res.json({
       success: true,
-      message: "Raw endpoint worked (DB IMPORTED)!",
+      message: "Raw endpoint worked (SCHEMA ONLY)!",
       received: req.body
     });
   } catch (e: any) {
