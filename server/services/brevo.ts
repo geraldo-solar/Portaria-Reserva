@@ -4,7 +4,7 @@ import { ENV } from "../_core/env";
 export async function createBrevoContact(
     name: string,
     email: string,
-    phone: string
+    phone?: string | null
 ) {
     if (!ENV.brevoApiKey) {
         console.warn("[Brevo] API Key not found. Sync disabled.");
@@ -14,17 +14,20 @@ export async function createBrevoContact(
     const [firstName, ...rest] = name.split(" ");
     const lastName = rest.length > 0 ? rest.join(" ") : "";
 
-    const payload = {
+    const payload: any = {
         email,
         attributes: {
             NOME: name,
             FIRSTNAME: firstName,
             LASTNAME: lastName,
-            SMS: phone,
         },
         listIds: [2],
         updateEnabled: true,
     };
+
+    if (phone) {
+        payload.attributes.SMS = phone;
+    }
 
     try {
         const response = await fetch("https://api.brevo.com/v3/contacts", {

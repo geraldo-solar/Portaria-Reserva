@@ -222,7 +222,7 @@ export const appRouter = router({
           price: ticketType.price / 100,
         });
 
-        if (input.customerEmail && input.customerPhone) {
+        if (input.customerEmail) {
           // Fire and forget Brevo sync
           createBrevoContact(input.customerName, input.customerEmail, input.customerPhone)
             .catch(err => console.error("Brevo sync failed:", err));
