@@ -65,8 +65,12 @@ app.get("/api/debug-tickets", async (req, res) => {
   try {
     const db = await getDb();
     if (!db) throw new Error("DB not init");
-    const allTickets = await db.select().from(sql`tickets`);
-    res.json({ count: allTickets.length, tickets: allTickets });
+
+    // Use raw execute to ensure we get column data
+    // @ts-ignore
+    const result: any = await db.execute(sql`SELECT * FROM "tickets" ORDER BY id DESC`);
+
+    res.json({ count: result.rowCount || 0, tickets: result.rows || [] });
   } catch (e: any) {
     res.status(500).json({ error: e.message });
   }
