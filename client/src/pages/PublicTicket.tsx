@@ -4,6 +4,7 @@ import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Calendar, User, Ticket as TicketIcon, AlertCircle, CheckCircle } from "lucide-react";
 import { useEffect, useState } from "react";
+import logo from "@/assets/logo-white.png";
 
 export default function PublicTicket() {
     const [match, params] = useRoute("/ticket/:token");
@@ -49,15 +50,15 @@ export default function PublicTicket() {
 
     return (
         <div className="min-h-screen bg-gray-100 p-4 flex flex-col items-center justify-center">
-            <Card className={`w-full max-w-sm shadow-xl overflow-hidden ${isValid ? 'border-emerald-500' : 'border-red-500'
+            <Card className={`w-full max-w-sm shadow-xl overflow-hidden bg-white ${isValid ? 'ring-2 ring-emerald-500' : 'ring-2 ring-red-500'
                 }`}>
                 <div className={`h-2 w-full ${isValid ? 'bg-emerald-500' : 'bg-red-500'}`} />
 
-                <CardHeader className="text-center pb-2">
-                    <div className="mx-auto mb-4">
-                        <img src="/logo-reserva-solar.png" alt="Reserva Solar" className="h-24 mx-auto object-contain" />
+                <CardHeader className="text-center pb-8 pt-10 bg-slate-950 border-b border-slate-800">
+                    <div className="mx-auto mb-6">
+                        <img src={logo} alt="Reserva Solar" className="h-32 mx-auto object-contain brightness-0 invert opacity-90" />
                     </div>
-                    <CardTitle className="uppercase tracking-widest text-sm text-gray-500">
+                    <CardTitle className="uppercase tracking-[0.3em] text-[10px] font-bold text-amber-500 shadow-black drop-shadow-sm">
                         Seu Ingresso Digital
                     </CardTitle>
                 </CardHeader>
@@ -88,7 +89,7 @@ export default function PublicTicket() {
                             <User className="text-gray-400" size={20} />
                             <div>
                                 <p className="text-xs text-gray-500 uppercase">Cliente</p>
-                                <p className="font-bold text-gray-900">{ticket.customerName}</p>
+                                <p className="font-bold text-gray-900">{ticket.customerName || "Visitante"}</p>
                                 {(ticket.customerPhone || ticket.customerEmail) && (
                                     <div className="mt-1 text-xs text-gray-500 space-y-0.5">
                                         {ticket.customerPhone && <p>📱 {ticket.customerPhone}</p>}

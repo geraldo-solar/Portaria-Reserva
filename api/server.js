@@ -544,7 +544,18 @@ var appRouter = router({
     })
   }),
   access: router({
-    info: publicProcedure.input(z2.object({ token: z2.string() })).query(async ({ input }) => {
+    info: publicProcedure.input(z2.object({ token: z2.string() })).output(
+      z2.object({
+        customerName: z2.string().nullable(),
+        customerPhone: z2.string().nullable(),
+        customerEmail: z2.string().nullable(),
+        ticketTypeName: z2.string().nullable(),
+        validUntil: z2.date().nullable(),
+        qrToken: z2.string(),
+        status: z2.string(),
+        createdAt: z2.date()
+      }).nullable()
+    ).query(async ({ input }) => {
       const ticket = await getTicketByQr(input.token);
       if (!ticket) return null;
       return {

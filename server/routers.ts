@@ -45,8 +45,20 @@ export const appRouter = router({
   access: router({
     info: publicProcedure
       .input(z.object({ token: z.string() }))
+      .output(
+        z.object({
+          customerName: z.string().nullable(),
+          customerPhone: z.string().nullable(),
+          customerEmail: z.string().nullable(),
+          ticketTypeName: z.string().nullable(),
+          validUntil: z.date().nullable(),
+          qrToken: z.string(),
+          status: z.string(),
+          createdAt: z.date(),
+        }).nullable()
+      )
       .query(async ({ input }) => {
-        const ticket = await getTicketByQr(input.token);
+        const ticket = await getTicketByQr(input.token) as any;
         if (!ticket) return null;
 
         return {
@@ -150,7 +162,7 @@ export const appRouter = router({
         }).optional()
       )
       .query(async ({ input }) => {
-        const allTickets = await listTickets({ status: input?.status });
+        const allTickets = await listTickets({ status: input?.status }) as any[];
         return allTickets.map((ticket) => ({
           ...ticket,
           price: ticket.price / 100,
@@ -176,7 +188,7 @@ export const appRouter = router({
 
         const customerId = (customerResult[0]?.insertId as number) || 1;
 
-        const ticketTypes = await listTicketTypes();
+        const ticketTypes = await listTicketTypes() as any[];
         const ticketType = ticketTypes.find((t) => t.id === input.ticketTypeId);
 
         if (!ticketType) {
@@ -194,7 +206,7 @@ export const appRouter = router({
         });
 
         // Postgres returns the row directly
-        const createdTicket = ticketResult[0];
+        const createdTicket = ticketResult[0] as any;
         if (!createdTicket) throw new Error("Failed to create ticket");
 
         const ticketId = createdTicket.id;
@@ -220,7 +232,7 @@ export const appRouter = router({
     getById: publicProcedure
       .input(z.number().int().positive())
       .query(async ({ input }) => {
-        const ticket = await getTicketById(input);
+        const ticket = await getTicketById(input) as any;
         if (!ticket) return null;
         return {
           ...ticket,
@@ -236,7 +248,7 @@ export const appRouter = router({
         })
       )
       .mutation(async ({ input }) => {
-        const ticket = await getTicketById(input.ticketId);
+        const ticket = await getTicketById(input.ticketId) as any;
         if (!ticket) {
           throw new Error("Ticket not found");
         }
@@ -258,7 +270,7 @@ export const appRouter = router({
     markPrinted: publicProcedure
       .input(z.number().int().positive())
       .mutation(async ({ input }) => {
-        const ticket = await getTicketById(input);
+        const ticket = await getTicketById(input) as any;
         if (!ticket) {
           throw new Error("Ticket not found");
         }
@@ -275,7 +287,7 @@ export const appRouter = router({
     markUsed: publicProcedure
       .input(z.number().int().positive())
       .mutation(async ({ input }) => {
-        const ticket = await getTicketById(input);
+        const ticket = await getTicketById(input) as any;
         if (!ticket) {
           throw new Error("Ticket not found");
         }
@@ -292,7 +304,7 @@ export const appRouter = router({
 
   ticketTypes: router({
     list: publicProcedure.query(async () => {
-      const types = await listTicketTypes();
+      const types = await listTicketTypes() as any[];
       return types.map((t) => ({
         ...t,
         price: t.price / 100,
@@ -327,6 +339,7 @@ export const appRouter = router({
           throw new Error("Database not available");
         }
 
+        // @ts-ignore
         await db.delete(ticketTypes).where(eq(ticketTypes.id, input));
 
         return { success: true };
@@ -342,7 +355,7 @@ export const appRouter = router({
         })
       )
       .query(async ({ input }) => {
-        const report = await getSalesReport(input.startDate, input.endDate);
+        const report = await getSalesReport(input.startDate, input.endDate) as any[];
         return report.map((ticket) => ({
           ...ticket,
           price: ticket.price / 100,
@@ -357,7 +370,7 @@ export const appRouter = router({
         }).optional()
       )
       .query(async ({ input }) => {
-        const stats = await getSalesStats(input?.startDate, input?.endDate);
+        const stats = await getSalesStats(input?.startDate, input?.endDate) as any;
         return {
           ...stats,
           totalRevenue: stats.totalRevenue / 100,
