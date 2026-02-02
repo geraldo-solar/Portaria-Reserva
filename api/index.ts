@@ -1,7 +1,9 @@
 import express from "express";
 // import { createExpressMiddleware } from "@trpc/server/adapters/express";
 // import { appRouter } from "../server/routers";
-import { createContext } from "../server/_core/context";
+// import { createContext } from "../server/_core/context";
+import { getDb } from "../server/db";
+import { ENV } from "../server/_core/env";
 
 const app = express();
 
@@ -18,12 +20,13 @@ app.get("/api/health", (req, res) => {
 app.post("/api/debug-create", (req, res) => {
   try {
     console.log("[RawDebug] Hit with body:", req.body);
-    // Force usage of context to ensure it's loaded
-    console.log("Context loaded:", typeof createContext);
+    // Debug imports
+    console.log("ENV loaded, AppID:", ENV.appId);
+    console.log("getDb loaded type:", typeof getDb);
 
     res.json({
       success: true,
-      message: "Raw endpoint worked (CONTEXT IMPORTED)!",
+      message: "Raw endpoint worked (DB IMPORTED)!",
       received: req.body
     });
   } catch (e: any) {
