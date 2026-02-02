@@ -186,7 +186,11 @@ export const appRouter = router({
           phone: input.customerPhone || null,
         });
 
-        const customerId = (customerResult[0]?.insertId as number) || 1;
+        const customerId = customerResult[0]?.id;
+
+        if (!customerId) {
+          throw new Error("Failed to create customer");
+        }
 
         const ticketTypes = await listTicketTypes() as any[];
         const ticketType = ticketTypes.find((t) => t.id === input.ticketTypeId);

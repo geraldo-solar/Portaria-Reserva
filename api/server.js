@@ -656,7 +656,10 @@ var appRouter = router({
         email: input.customerEmail || null,
         phone: input.customerPhone || null
       });
-      const customerId = customerResult[0]?.insertId || 1;
+      const customerId = customerResult[0]?.id;
+      if (!customerId) {
+        throw new Error("Failed to create customer");
+      }
       const ticketTypes2 = await listTicketTypes();
       const ticketType = ticketTypes2.find((t2) => t2.id === input.ticketTypeId);
       if (!ticketType) {
