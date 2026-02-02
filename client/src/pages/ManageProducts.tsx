@@ -121,20 +121,7 @@ export default function ManageProducts() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        {/* Diagnostic Status */}
-        {brevoStatus && (
-          <div className={`mb-6 p-4 rounded-lg border ${brevoStatus.apiWorks ? 'bg-blue-50 border-blue-200 text-blue-800' : 'bg-red-50 border-red-200 text-red-800'}`}>
-            <h3 className="font-bold flex items-center gap-2">
-              {brevoStatus.apiWorks ? <CheckCircle size={20} /> : <AlertCircle size={20} />}
-              Status da Integração Brevo
-            </h3>
-            <div className="mt-2 text-sm">
-              <p>Chave de API detectada: <strong>{brevoStatus.hasKey ? "Sim" : "Não (Verifique Vercel Env Vars)"}</strong></p>
-              <p>Conexão com Brevo: <strong>{brevoStatus.apiWorks ? "OK" : "Falhou"}</strong></p>
-              {brevoStatus.error && <p className="mt-1 font-mono text-xs bg-white/50 p-1 rounded">{brevoStatus.error}</p>}
-            </div>
-          </div>
-        )}
+
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Formulário de Cadastro */}

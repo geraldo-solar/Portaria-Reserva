@@ -26,7 +26,18 @@ export async function createBrevoContact(
     };
 
     if (phone) {
-        payload.attributes.SMS = phone;
+        // Sanitize phone: remove all non-numeric characters
+        let cleanPhone = phone.replace(/\D/g, "");
+
+        // Ensure it has at least area code (2 digits) + number (8-9 digits) -> 10-11 digits
+        if (cleanPhone.length >= 10) {
+            // Assume Brazil if no country code (length 10 or 11)
+            if (cleanPhone.length <= 11) {
+                cleanPhone = "55" + cleanPhone;
+            }
+            // Add plus sign prefix required by E.164
+            payload.attributes.SMS = "+" + cleanPhone;
+        }
     }
 
     try {
