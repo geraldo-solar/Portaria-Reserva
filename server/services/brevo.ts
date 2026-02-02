@@ -26,22 +26,25 @@ export async function createBrevoContact(
     };
 
     if (phone) {
-        // Sanitize phone: remove all non-numeric characters
+        // Check if user explicitly provided a DDI (starts with +)
+        const hasPlus = phone.trim().startsWith("+");
         let cleanPhone = phone.replace(/\D/g, "");
 
-        // Ensure it has at least area code (2 digits) + number (8-9 digits) -> 10-11 digits
-        if (cleanPhone.length >= 10) {
-            // Assume Brazil if no country code (length 10 or 11)
-            if (cleanPhone.length <= 11) {
-                cleanPhone = "55" + cleanPhone;
+        if (cleanPhone.length > 5) {
+            if (hasPlus) {
+                // Trust the user's DDI
+                payload.attributes.SMS = "+" + cleanPhone;
+            } else {
+                // No + provided. Heuristic for Brazil:
+                // If 10 or 11 digits, assume it's a local number missing DDI (55)
+                if (cleanPhone.length >= 10 && cleanPhone.length <= 11) {
+                    cleanPhone = "55" + cleanPhone;
+                }
+                // Always prepend + for E.164
+                payload.attributes.SMS = "+" + cleanPhone;
             }
-            // Add plus sign prefix required by E.164
-            payload.attributes.SMS = "+" + cleanPhone;
         }
     }
-
-    // Log payload for debugging
-    console.log("[Brevo] Sending payload:", JSON.stringify(payload, null, 2));
 
     try {
         const response = await fetch("https://api.brevo.com/v3/contacts", {
@@ -55,18 +58,12 @@ export async function createBrevoContact(
         });
 
         if (!response.ok) {
-            const errorText = await response.text();
-            console.error(`[Brevo] API Error (${response.status}):`, errorText);
-            // Also try to update if it exists (POST fails if exists, need PUT or logic mismatch)
-            // But we have updateEnabled: true in payload... wait, createContact endpoint
-            // handles updateEnabled? Let's check docs. 
-            // Actually, /contacts endpoint with updateEnabled: true SHOULD work.
+            console.error(`[Brevo] API Error (${response.status})`);
         } else {
-            const data = await response.json();
-            console.log("[Brevo] Contact synced successfully:", data);
-            return data;
+            // Success
+            return await response.json();
         }
     } catch (error: any) {
-        console.error("[Brevo] Request failed:", error.message);
+        console.error("[Brevo] Sync failed:", error.message);
     }
 }
