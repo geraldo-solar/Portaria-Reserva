@@ -44,7 +44,8 @@ var ENV = {
   ownerOpenId: process.env.OWNER_OPEN_ID ?? "",
   isProduction: process.env.NODE_ENV === "production",
   forgeApiUrl: process.env.BUILT_IN_FORGE_API_URL ?? "",
-  forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? ""
+  forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
+  brevoApiKey: process.env.BREVO_API_KEY ?? ""
 };
 
 // server/_core/notification.ts
@@ -528,6 +529,50 @@ async function getSalesStats(startDate, endDate) {
 
 // server/routers.ts
 import { v4 as uuidv4 } from "uuid";
+
+// server/services/brevo.ts
+import * as Brevo from "@getbrevo/brevo";
+var apiInstance = null;
+function getApiInstance() {
+  if (!apiInstance) {
+    if (!ENV.brevoApiKey) {
+      console.warn("[Brevo] API Key not found. Brevo integration disabled.");
+      return null;
+    }
+    const defaultClient = Brevo.ApiClient.instance;
+    const apiKey = defaultClient.authentications["api-key"];
+    apiKey.apiKey = ENV.brevoApiKey;
+    apiInstance = new Brevo.ContactsApi();
+  }
+  return apiInstance;
+}
+async function createBrevoContact(name, email, phone) {
+  const api = getApiInstance();
+  if (!api) return;
+  const createContact = new Brevo.CreateContact();
+  const [firstName, ...rest] = name.split(" ");
+  const lastName = rest.length > 0 ? rest.join(" ") : "";
+  createContact.email = email;
+  createContact.attributes = {
+    NOME: name,
+    // Custom attribute if you have one, or map to FIRSTNAME/LASTNAME
+    FIRSTNAME: firstName,
+    LASTNAME: lastName,
+    SMS: phone
+    // Ensure phone is in E.164 format roughly
+  };
+  createContact.listIds = [2];
+  createContact.updateEnabled = true;
+  try {
+    const data = await api.createContact(createContact);
+    console.log("[Brevo] Contact created/updated successfully:", data.body);
+    return data.body;
+  } catch (error) {
+    console.error("[Brevo] Failed to create contact:", error.body || error.message);
+  }
+}
+
+// server/routers.ts
 var appRouter = router({
   system: systemRouter,
   auth: router({
@@ -682,6 +727,9 @@ var appRouter = router({
         ticketType: ticketType.name,
         price: ticketType.price / 100
       });
+      if (input.customerEmail && input.customerPhone) {
+        createBrevoContact(input.customerName, input.customerEmail, input.customerPhone).catch((err) => console.error("Brevo sync failed:", err));
+      }
       return {
         id: ticketId,
         customerId,

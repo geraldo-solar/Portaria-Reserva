@@ -23,6 +23,7 @@ import {
 import { v4 as uuidv4 } from "uuid";
 import { getDb } from "./db";
 import { ticketTypes } from "../drizzle/schema";
+import { createBrevoContact } from "./services/brevo";
 
 export const appRouter = router({
   system: systemRouter,
@@ -220,6 +221,12 @@ export const appRouter = router({
           ticketType: ticketType.name,
           price: ticketType.price / 100,
         });
+
+        if (input.customerEmail && input.customerPhone) {
+          // Fire and forget Brevo sync
+          createBrevoContact(input.customerName, input.customerEmail, input.customerPhone)
+            .catch(err => console.error("Brevo sync failed:", err));
+        }
 
         return {
           id: ticketId,
