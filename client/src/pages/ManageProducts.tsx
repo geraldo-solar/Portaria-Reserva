@@ -221,26 +221,7 @@ export default function ManageProducts() {
           <CardHeader>
             <div className="flex justify-between items-center">
               <CardTitle>Produtos Cadastrados</CardTitle>
-              <Button
-                size="sm"
-                variant="outline"
-                className="bg-blue-100 text-blue-800 border-blue-300"
-                onClick={async () => {
-                  try {
-                    const res = await fetch("/api/debug-create", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ name: "Teste Raw", price: 10.50 })
-                    });
-                    const text = await res.text();
-                    alert("RAW TESTE: " + text);
-                  } catch (e: any) {
-                    alert("RAW ERRO: " + e.message);
-                  }
-                }}
-              >
-                🧪 Teste HTTP (Raw)
-              </Button>
+
             </div>
           </CardHeader>
           <CardContent>
