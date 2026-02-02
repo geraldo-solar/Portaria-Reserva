@@ -78,21 +78,16 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         try {
           console.log("[CreateProduct] Starting...", input);
-          // MOCK MODE: Bypass DB to confirm write-crash theory
-          // const priceInCents = Math.round(input.price * 100);
+          // REAL DB MODE
+          const priceInCents = Math.round(input.price * 100);
 
-          // const result = await createTicketType({
-          //   name: input.name,
-          //   description: input.description || null,
-          //   price: priceInCents,
-          // });
-
-          return {
-            id: 9999, // Mock ID
+          const result = await createTicketType({
             name: input.name,
             description: input.description || null,
-            price: input.price,
-          };
+            price: priceInCents,
+          });
+
+          return result;
         } catch (error: any) {
           console.error("CreateProduct Error:", error);
           throw new Error(error.message || "Failed to create product");
