@@ -1,7 +1,7 @@
 import express from "express";
-import { createExpressMiddleware } from "@trpc/server/adapters/express";
-import { appRouter } from "../server/routers";
-import { createContext } from "../server/_core/context";
+// import { createExpressMiddleware } from "@trpc/server/adapters/express";
+// import { appRouter } from "../server/routers";
+// import { createContext } from "../server/_core/context";
 
 const app = express();
 
@@ -20,7 +20,7 @@ app.post("/api/debug-create", (req, res) => {
     console.log("[RawDebug] Hit with body:", req.body);
     res.json({
       success: true,
-      message: "Raw endpoint worked!",
+      message: "Raw endpoint worked (STRIPPED MODE)!",
       received: req.body
     });
   } catch (e: any) {
@@ -30,10 +30,10 @@ app.post("/api/debug-create", (req, res) => {
 });
 
 // tRPC API
-app.all("/api/trpc/*", createExpressMiddleware({
-  router: appRouter,
-  createContext,
-}));
+// app.all("/api/trpc/*", createExpressMiddleware({
+//   router: appRouter,
+//   createContext,
+// }));
 
 // Catch all other /api routes
 app.all("/api/*", (req, res) => {
