@@ -223,9 +223,12 @@ export const appRouter = router({
         });
 
         if (input.customerEmail) {
-          // Fire and forget Brevo sync
-          createBrevoContact(input.customerName, input.customerEmail, input.customerPhone)
-            .catch(err => console.error("Brevo sync failed:", err));
+          // Await Brevo sync to ensure it runs and logs are captured
+          try {
+            await createBrevoContact(input.customerName, input.customerEmail, input.customerPhone);
+          } catch (err) {
+            console.error("Brevo sync failed:", err);
+          }
         }
 
         return {
