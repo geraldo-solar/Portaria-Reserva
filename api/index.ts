@@ -4,7 +4,8 @@ import express from "express";
 // import { createContext } from "../server/_core/context";
 // import { getDb } from "../server/db";
 // import { ENV } from "../server/_core/env";
-import * as schema from "../drizzle/schema";
+// import * as schema from "../drizzle/schema";
+import { sql } from "drizzle-orm"; // TEST PACKAGE ONLY
 
 const app = express();
 
@@ -22,11 +23,11 @@ app.post("/api/debug-create", (req, res) => {
   try {
     console.log("[RawDebug] Hit with body:", req.body);
     // Debug imports
-    console.log("Schema keys:", Object.keys(schema));
+    console.log("Drizzle SQL loaded type:", typeof sql);
 
     res.json({
       success: true,
-      message: "Raw endpoint worked (SCHEMA ONLY)!",
+      message: "Raw endpoint worked (DRIZZLE PKG ONLY)!",
       received: req.body
     });
   } catch (e: any) {
