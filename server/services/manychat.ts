@@ -58,22 +58,74 @@ export async function createManyChatSubscriber(
 
             // If creation successful, add the "Reserva" tag
             if (data.status === "success" && data.data?.id) {
+                const subscriberId = data.data.id;
                 try {
-                    console.log("[ManyChat] Adding tag 'Reserva'...");
-                    await fetch("https://api.manychat.com/fb/subscriber/addTagByName", {
-                        method: "POST",
+                    console.log("[ManyChat] Ensuring tag 'Reserva' exists...");
+
+                    // 1. Get all tags to find ID
+                    const tagsResponse = await fetch("https://api.manychat.com/fb/page/getTags", {
+                        method: "GET",
                         headers: {
                             "accept": "application/json",
                             "Authorization": `Bearer ${ENV.manychatApiToken}`,
-                            "content-type": "application/json",
-                        },
-                        body: JSON.stringify({
-                            subscriber_id: data.data.id,
-                            tag_name: "Reserva"
-                        }),
+                        }
                     });
-                } catch (tagError) {
-                    console.error("[ManyChat] Failed to add tag:", tagError);
+
+                    let tagId: number | null = null;
+                    if (tagsResponse.ok) {
+                        const tagsData = await tagsResponse.json();
+                        // ManyChat returns { status: "success", data: [ { id, name } ] }
+                        if (tagsData.data && Array.isArray(tagsData.data)) {
+                            const existingTag = tagsData.data.find((t: any) => t.name === "Reserva");
+                            if (existingTag) {
+                                tagId = existingTag.id;
+                            }
+                        }
+                    }
+
+                    // 2. If tag doesn't exist, create it
+                    if (!tagId) {
+                        console.log("[ManyChat] Tag not found, creating 'Reserva'...");
+                        const createTagRes = await fetch("https://api.manychat.com/fb/page/createTag", {
+                            method: "POST",
+                            headers: {
+                                "accept": "application/json",
+                                "Authorization": `Bearer ${ENV.manychatApiToken}`,
+                                "content-type": "application/json",
+                            },
+                            body: JSON.stringify({ name: "Reserva" })
+                        });
+                        if (createTagRes.ok) {
+                            const createData = await createTagRes.json();
+                            if (createData.data?.id) {
+                                tagId = createData.data.id;
+                            }
+                        } else {
+                            const errText = await createTagRes.text();
+                            console.error(`[ManyChat] Failed to create tag: ${errText}`);
+                        }
+                    }
+
+                    // 3. Add tag by ID
+                    if (tagId) {
+                        console.log(`[ManyChat] Adding tag ID ${tagId} to subscriber ${subscriberId}...`);
+                        await fetch("https://api.manychat.com/fb/subscriber/addTag", {
+                            method: "POST",
+                            headers: {
+                                "accept": "application/json",
+                                "Authorization": `Bearer ${ENV.manychatApiToken}`,
+                                "content-type": "application/json",
+                            },
+                            body: JSON.stringify({
+                                subscriber_id: subscriberId,
+                                tag_id: tagId
+                            }),
+                        });
+                    } else {
+                        console.error("[ManyChat] Could not resolve Tag ID for 'Reserva'");
+                    }
+                } catch (tagError: any) {
+                    console.error("[ManyChat] Failed to process tag:", tagError.message);
                 }
             }
 
