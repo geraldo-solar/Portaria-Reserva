@@ -26,4 +26,28 @@ export const systemRouter = router({
         success: delivered,
       } as const;
     }),
+
+  brevoStatus: publicProcedure.query(async () => {
+    const { ENV } = await import("./env");
+    const hasKey = !!ENV.brevoApiKey;
+    let apiWorks = false;
+    let error = null;
+
+    if (hasKey) {
+      try {
+        const res = await fetch("https://api.brevo.com/v3/account", {
+          headers: { "api-key": ENV.brevoApiKey! }
+        });
+        if (res.ok) {
+          apiWorks = true;
+        } else {
+          error = `Status: ${res.status} - ${await res.text()}`;
+        }
+      } catch (e: any) {
+        error = e.message;
+      }
+    }
+
+    return { hasKey, apiWorks, error };
+  }),
 });

@@ -44,6 +44,12 @@ export default function ManageProducts() {
     },
   });
 
+  // Diagnostic
+  const { data: brevoStatus } = trpc.system.brevoStatus.useQuery();
+  if (brevoStatus) {
+    console.log("diagnostico_brevo:", brevoStatus);
+  }
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
