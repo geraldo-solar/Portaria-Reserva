@@ -42,7 +42,7 @@ export function createToken(user: SessionUser): string {
       role: user.role,
     },
     JWT_SECRET,
-    { expiresIn: "7d" }
+    { expiresIn: "24h" }
   );
 }
 
@@ -86,7 +86,7 @@ export function setSessionCookie(res: Response, user: SessionUser): void {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 dias
+    maxAge: 24 * 60 * 60 * 1000, // 24 horas
     path: "/",
   });
 }
