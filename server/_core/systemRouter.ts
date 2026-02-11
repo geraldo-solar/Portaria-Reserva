@@ -48,47 +48,52 @@ export const systemRouter = router({
       }
     }
 
-    verifySubscriber: publicProcedure
-      .input(z.object({
-        email: z.string().optional(),
-        phone: z.string().optional()
-      }))
-      .mutation(async ({ input }) => {
-        const { ENV } = await import("./env");
-        if (!ENV.manychatApiToken) return { error: "No Token" };
+    return { apiWorks, error };
+  }),
 
-        const results: any = {};
+  verifySubscriber: publicProcedure
 
-        if (input.email) {
-          try {
-            const res = await fetch(`https://api.manychat.com/fb/subscriber/findByInfo?email=${encodeURIComponent(input.email)}`, {
-              headers: { "Authorization": `Bearer ${ENV.manychatApiToken}` }
-            });
-            results.emailSearch = { status: res.status, data: await res.json() };
-          } catch (e: any) { results.emailError = e.message; }
-        }
+    .input(z.object({
+      email: z.string().optional(),
+      phone: z.string().optional()
+    }))
+    .mutation(async ({ input }) => {
+      const { ENV } = await import("./env");
+      if (!ENV.manychatApiToken) return { error: "No Token" };
 
-        if (input.phone) {
-          try {
-            // Try raw
-            const res1 = await fetch(`https://api.manychat.com/fb/subscriber/findByInfo?phone=${encodeURIComponent(input.phone)}`, {
-              headers: { "Authorization": `Bearer ${ENV.manychatApiToken}` }
-            });
-            results.phoneSearchRaw = { status: res1.status, data: await res1.json() };
+      const results: any = {};
 
-            // Try formatted (if not already +)
-            let formatted = input.phone.replace(/\D/g, "");
-            if (!formatted.startsWith("+")) formatted = "+" + formatted; // simple
-            // If it doesn't have 55 and looks like BR, add it (just for test)
-            if (!formatted.startsWith("+55") && formatted.length < 13) formatted = "+55" + formatted.replace("+", "");
+      if (input.email) {
+        try {
+          const res = await fetch(`https://api.manychat.com/fb/subscriber/findByInfo?email=${encodeURIComponent(input.email)}`, {
+            headers: { "Authorization": `Bearer ${ENV.manychatApiToken}` }
+          });
+          results.emailSearch = { status: res.status, data: await res.json() };
+        } catch (e: any) { results.emailError = e.message; }
+      }
 
-            const res2 = await fetch(`https://api.manychat.com/fb/subscriber/findByInfo?phone=${encodeURIComponent(formatted)}`, {
-              headers: { "Authorization": `Bearer ${ENV.manychatApiToken}` }
-            });
-            results.phoneSearchFormatted = { tested: formatted, status: res2.status, data: await res2.json() };
+      if (input.phone) {
+        try {
+          // Try raw
+          const res1 = await fetch(`https://api.manychat.com/fb/subscriber/findByInfo?phone=${encodeURIComponent(input.phone)}`, {
+            headers: { "Authorization": `Bearer ${ENV.manychatApiToken}` }
+          });
+          results.phoneSearchRaw = { status: res1.status, data: await res1.json() };
 
-          } catch (e: any) { results.phoneError = e.message; }
-        }
+          // Try formatted (if not already +)
+          let formatted = input.phone.replace(/\D/g, "");
+          if (!formatted.startsWith("+")) formatted = "+" + formatted; // simple
+          // If it doesn't have 55 and looks like BR, add it (just for test)
+          if (!formatted.startsWith("+55") && formatted.length < 13) formatted = "+55" + formatted.replace("+", "");
 
-        return results;
-      });
+          const res2 = await fetch(`https://api.manychat.com/fb/subscriber/findByInfo?phone=${encodeURIComponent(formatted)}`, {
+            headers: { "Authorization": `Bearer ${ENV.manychatApiToken}` }
+          });
+          results.phoneSearchFormatted = { tested: formatted, status: res2.status, data: await res2.json() };
+
+        } catch (e: any) { results.phoneError = e.message; }
+      }
+
+      return results;
+    }),
+});
