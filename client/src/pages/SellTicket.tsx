@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -68,6 +68,8 @@ export default function SellTicket() {
   // Determinar qual lista usar
   const ticketTypes = usingCache ? cachedTicketTypes : (ticketTypesQuery.data || []);
 
+  const customerFormRef = useRef<HTMLDivElement>(null);
+
   const handleSelectTicketType = (ticketTypeId: number) => {
     const ticketType = ticketTypes.find((t) => t.id === ticketTypeId);
     if (!ticketType) return;
@@ -81,6 +83,13 @@ export default function SellTicket() {
         quantity: 1,
       },
     ]);
+
+    // Auto-scroll to customer form
+    if (customerFormRef.current) {
+      setTimeout(() => {
+        customerFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 100);
+    }
   };
 
   const handleRemoveFromCart = (ticketTypeId: number) => {
@@ -230,32 +239,44 @@ export default function SellTicket() {
                   </div>
                 ) : ticketTypes.length > 0 ? (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    {ticketTypes.map((ticketType) => (
-                      <button
-                        key={ticketType.id}
-                        onClick={() => handleSelectTicketType(ticketType.id)}
-                        className="p-6 border-2 border-emerald-300 rounded-lg bg-gradient-to-br from-emerald-50 to-white hover:from-emerald-100 hover:to-emerald-50 hover:border-emerald-500 transition-all duration-200 text-left group"
-                      >
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex items-center gap-3">
-                            <div className="p-2 bg-emerald-600 rounded-lg group-hover:bg-emerald-700 transition-colors">
-                              <Ticket className="text-white" size={24} />
+                    {ticketTypes.map((ticketType) => {
+                      const isSelected = cart.some((item) => item.ticketTypeId === ticketType.id);
+                      return (
+                        <button
+                          key={ticketType.id}
+                          onClick={() => handleSelectTicketType(ticketType.id)}
+                          className={`p-6 border-2 rounded-lg transition-all duration-200 text-left group relative ${isSelected
+                            ? "border-emerald-600 bg-emerald-50 ring-2 ring-emerald-500 ring-opacity-50"
+                            : "border-emerald-100 bg-white hover:border-emerald-300 hover:bg-emerald-50"
+                            }`}
+                        >
+                          {isSelected && (
+                            <div className="absolute top-2 right-2 text-emerald-600">
+                              <CheckCircle size={24} fill="white" />
                             </div>
-                            <div>
-                              <h3 className="font-bold text-lg text-emerald-900">
-                                {ticketType.name}
-                              </h3>
-                              <p className="text-2xl font-bold text-emerald-700">
-                                R$ {ticketType.price.toFixed(2)}
-                              </p>
+                          )}
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex items-center gap-3">
+                              <div className={`p-2 rounded-lg transition-colors ${isSelected ? "bg-emerald-700" : "bg-emerald-100 group-hover:bg-emerald-200"
+                                }`}>
+                                <Ticket className={isSelected ? "text-white" : "text-emerald-700"} size={24} />
+                              </div>
+                              <div>
+                                <h3 className="font-bold text-lg text-emerald-900">
+                                  {ticketType.name}
+                                </h3>
+                                <p className="text-2xl font-bold text-emerald-700">
+                                  R$ {ticketType.price.toFixed(2)}
+                                </p>
+                              </div>
                             </div>
                           </div>
-                        </div>
-                        <div className="text-sm text-emerald-600 font-medium">
-                          Clique para adicionar ao carrinho
-                        </div>
-                      </button>
-                    ))}
+                          <div className={`text-sm font-medium ${isSelected ? "text-emerald-800" : "text-emerald-600"}`}>
+                            {isSelected ? "Selecionado" : "Clique para selecionar"}
+                          </div>
+                        </button>
+                      );
+                    })}
                   </div>
                 ) : !isOnline ? (
                   <div className="text-center py-12 text-orange-600 bg-orange-50 rounded-lg border-2 border-orange-200">
@@ -275,7 +296,7 @@ export default function SellTicket() {
           </div>
 
           {/* Carrinho, Dados do Cliente e Resumo */}
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-1" ref={customerFormRef}>
             <Card className="sticky top-6">
               <CardHeader>
                 <CardTitle>Dados da Venda</CardTitle>
