@@ -27,11 +27,54 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
+// 15 minutes in milliseconds
+const INACTIVITY_LIMIT = 15 * 60 * 1000;
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const login = () => setIsAuthenticated(true);
   const logout = () => setIsAuthenticated(false);
+
+  useEffect(() => {
+    let inactivityTimer: NodeJS.Timeout;
+
+    const resetTimer = () => {
+      if (inactivityTimer) clearTimeout(inactivityTimer);
+      if (isAuthenticated) {
+        inactivityTimer = setTimeout(() => {
+          logout();
+          window.location.href = "/login"; // Force redirect to be safe
+        }, INACTIVITY_LIMIT);
+      }
+    };
+
+    const handleActivity = () => {
+      resetTimer();
+    };
+
+    // Only set up listeners if authenticated
+    if (isAuthenticated) {
+      // Set initial timer
+      resetTimer();
+
+      // Listen for activity
+      window.addEventListener("mousemove", handleActivity);
+      window.addEventListener("keypress", handleActivity);
+      window.addEventListener("click", handleActivity);
+      window.addEventListener("scroll", handleActivity);
+      window.addEventListener("touchstart", handleActivity); // Mobile support
+    }
+
+    return () => {
+      if (inactivityTimer) clearTimeout(inactivityTimer);
+      window.removeEventListener("mousemove", handleActivity);
+      window.removeEventListener("keypress", handleActivity);
+      window.removeEventListener("click", handleActivity);
+      window.removeEventListener("scroll", handleActivity);
+      window.removeEventListener("touchstart", handleActivity);
+    };
+  }, [isAuthenticated]);
 
   return (
     <AuthContext.Provider value={{ isAuthenticated, login, logout }}>
