@@ -14,7 +14,7 @@ import { dirname } from "path";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-const plugins = [react(), tailwindcss(), jsxLocPlugin(), vitePluginManusRuntime()];
+const plugins = [react(), tailwindcss(), /*jsxLocPlugin()*/, vitePluginManusRuntime()];
 
 export default defineConfig({
   plugins,

@@ -21,7 +21,7 @@ function ProtectedRoute({ component: Component }: { component: React.ComponentTy
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const auth = localStorage.getItem("portaria_authenticated");
+    const auth = sessionStorage.getItem("portaria_authenticated");
     setIsAuthenticated(auth === "true");
     setLoading(false);
   }, []);
@@ -60,6 +60,7 @@ function Router() {
 function App() {
   // Registrar service worker
   useEffect(() => {
+    /*
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker
         .register('/sw.js')
@@ -70,6 +71,7 @@ function App() {
           console.error('[PWA] Service Worker registration failed:', error);
         });
     }
+    */
   }, []);
 
   return (

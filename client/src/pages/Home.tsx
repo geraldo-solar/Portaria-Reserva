@@ -8,8 +8,8 @@ export default function Home() {
   const [, setLocation] = useLocation();
 
   const handleLogout = () => {
-    localStorage.removeItem("portaria_authenticated");
-    localStorage.removeItem("portaria_login_time");
+    sessionStorage.removeItem("portaria_authenticated");
+    sessionStorage.removeItem("portaria_login_time");
     setLocation("/login");
   };
 

@@ -19,9 +19,9 @@ export default function Login() {
 
     // Simular validação de PIN
     if (pin === "1234") {
-      // Armazenar sessão no localStorage
-      localStorage.setItem("portaria_authenticated", "true");
-      localStorage.setItem("portaria_login_time", new Date().toISOString());
+      // Armazenar sessão no sessionStorage
+      sessionStorage.setItem("portaria_authenticated", "true");
+      sessionStorage.setItem("portaria_login_time", new Date().toISOString());
       setLocation("/");
     } else {
       setError("PIN inválido. Tente novamente.");
@@ -35,10 +35,10 @@ export default function Login() {
     <div className="min-h-screen relative flex items-center justify-center p-4 overflow-hidden">
       {/* Background com logo branca */}
       <div className="absolute inset-0 bg-gradient-to-br from-emerald-700 via-emerald-600 to-emerald-800 flex items-center justify-center opacity-100">
-        <img 
-          src={APP_LOGO} 
-          alt="Logo Background" 
-          className="w-96 h-96 opacity-15 object-contain" 
+        <img
+          src={APP_LOGO}
+          alt="Logo Background"
+          className="w-96 h-96 opacity-15 object-contain"
         />
       </div>
 
