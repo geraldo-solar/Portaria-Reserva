@@ -17,21 +17,15 @@ import PublicTicket from "./pages/PublicTicket";
 import { useEffect, useState } from "react";
 
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const auth = sessionStorage.getItem("portaria_authenticated");
-    setIsAuthenticated(auth === "true");
-    setLoading(false);
-  }, []);
-
-  if (loading) {
-    return <div className="flex items-center justify-center min-h-screen">Carregando...</div>;
-  }
+  // Check auth synchronously to avoid flash and ensure immediate redirect
+  const isAuthenticated = sessionStorage.getItem("portaria_authenticated") === "true";
 
   if (!isAuthenticated) {
-    window.location.href = "/login";
+    // Redirect immediately if not authenticated
+    // Using window.location.href to ensure a full refresh/redirect
+    if (window.location.pathname !== "/login") {
+      window.location.href = "/login";
+    }
     return null;
   }
 
@@ -58,20 +52,17 @@ function Router() {
 }
 
 function App() {
-  // Registrar service worker
+  // Force unregister any existing service workers to clear stale cache
   useEffect(() => {
-    /*
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker
-        .register('/sw.js')
-        .then((registration) => {
-          console.log('[PWA] Service Worker registered:', registration);
-        })
-        .catch((error) => {
-          console.error('[PWA] Service Worker registration failed:', error);
-        });
+      navigator.serviceWorker.getRegistrations().then((registrations) => {
+        for (const registration of registrations) {
+          registration.unregister().then(() => {
+            console.log('Service Worker unregistered');
+          });
+        }
+      });
     }
-    */
   }, []);
 
   return (
