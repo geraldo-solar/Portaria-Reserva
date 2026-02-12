@@ -3,13 +3,14 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileText, LogOut, Ticket, Plus, ScanLine } from "lucide-react";
 import { APP_LOGO, APP_TITLE } from "@/const";
+import { useAuth } from "../App";
 
 export default function Home() {
   const [, setLocation] = useLocation();
+  const { logout } = useAuth();
 
   const handleLogout = () => {
-    sessionStorage.removeItem("portaria_authenticated");
-    sessionStorage.removeItem("portaria_login_time");
+    logout();
     setLocation("/login");
   };
 

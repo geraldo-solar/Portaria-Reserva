@@ -16,13 +16,42 @@ import Scanner from "./pages/Scanner";
 import PublicTicket from "./pages/PublicTicket";
 import { useEffect, useState } from "react";
 
+// Auth Context
+import { createContext, useContext, ReactNode } from "react";
+
+interface AuthContextType {
+  isAuthenticated: boolean;
+  login: () => void;
+  logout: () => void;
+}
+
+const AuthContext = createContext<AuthContextType | null>(null);
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  const login = () => setIsAuthenticated(true);
+  const logout = () => setIsAuthenticated(false);
+
+  return (
+    <AuthContext.Provider value={{ isAuthenticated, login, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
+}
+
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
-  // Check auth synchronously to avoid flash and ensure immediate redirect
-  const isAuthenticated = sessionStorage.getItem("portaria_authenticated") === "true";
+  const { isAuthenticated } = useAuth();
 
   if (!isAuthenticated) {
-    // Redirect immediately if not authenticated
-    // Using window.location.href to ensure a full refresh/redirect
     if (window.location.pathname !== "/login") {
       window.location.href = "/login";
     }
@@ -71,7 +100,9 @@ function App() {
         <TooltipProvider>
           <Toaster />
           <OfflineIndicator />
-          <Router />
+          <AuthProvider>
+            <Router />
+          </AuthProvider>
         </TooltipProvider>
       </ThemeProvider>
     </ErrorBoundary>

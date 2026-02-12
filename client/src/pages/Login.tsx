@@ -5,12 +5,14 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AlertCircle } from "lucide-react";
 import { APP_LOGO, APP_TITLE } from "@/const";
+import { useAuth } from "../App";
 
 export default function Login() {
   const [pin, setPin] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [, setLocation] = useLocation();
+  const { login } = useAuth();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,9 +21,7 @@ export default function Login() {
 
     // Simular validação de PIN
     if (pin === "1234") {
-      // Armazenar sessão no sessionStorage
-      sessionStorage.setItem("portaria_authenticated", "true");
-      sessionStorage.setItem("portaria_login_time", new Date().toISOString());
+      login();
       setLocation("/");
     } else {
       setError("PIN inválido. Tente novamente.");
