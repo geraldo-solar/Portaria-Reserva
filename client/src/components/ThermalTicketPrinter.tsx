@@ -182,23 +182,21 @@ export function ThermalTicketPrinter({ open, onClose, ticket }: ThermalTicketPri
               </div>
               
               <div class="info">
-                <span class="info-label">Data:</span> ${new Date(ticket.createdAt).toLocaleDateString("pt-BR")}
+                <span class="info-label">Data:</span> ${new Date(ticket.createdAt).toLocaleString("pt-BR")}
               </div>
 
               ${qrImage ? `
                 <div class="qrcode">
                    <img src="${qrImage}" alt="QR Code" />
                 </div>
-                <div class="info" style="font-size: 7px;">
-                   Válido até: ${new Date(new Date(ticket.createdAt).getTime() + 12 * 60 * 60 * 1000).toLocaleString("pt-BR")}
-                </div>
+
               ` : ''}
 
             </div>
             
             <div class="footer">
               <div style="font-size: 7px; margin-bottom: 2mm;">
-                Válido por 12h para entrada e pedidos
+                INGRESSO INDIVIDUAL E INTRANSFERÍVEL
               </div>
               <div style="font-size: 7px;">
                 Apresente este ingresso na entrada
@@ -252,14 +250,14 @@ export function ThermalTicketPrinter({ open, onClose, ticket }: ThermalTicketPri
               <div><span className="font-bold">Cliente:</span> {ticket.customerName || "N/A"}</div>
               <div><span className="font-bold">Tipo:</span> {ticket.ticketType || "Padrão"}</div>
               <div><span className="font-bold">Preço:</span> R$ {ticket.price.toFixed(2)}</div>
-              <div><span className="font-bold">Data:</span> {new Date(ticket.createdAt).toLocaleDateString("pt-BR")}</div>
+              <div><span className="font-bold">Data:</span> {new Date(ticket.createdAt).toLocaleString("pt-BR")}</div>
             </div>
 
 
 
             {/* Rodapé */}
             <div className="text-[10px] pt-2">
-              <div>Válido por 1 dia a partir da emissão</div>
+              <div>INGRESSO INDIVIDUAL E INTRANSFERÍVEL</div>
               <div>Apresente este ingresso na entrada</div>
             </div>
           </div>

@@ -1,3 +1,37 @@
+var __defProp = Object.defineProperty;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __esm = (fn, res) => function __init() {
+  return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
+};
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+
+// server/_core/env.ts
+var env_exports = {};
+__export(env_exports, {
+  ENV: () => ENV
+});
+var ENV;
+var init_env = __esm({
+  "server/_core/env.ts"() {
+    "use strict";
+    ENV = {
+      appId: process.env.VITE_APP_ID ?? "",
+      cookieSecret: process.env.JWT_SECRET ?? "",
+      databaseUrl: process.env.DATABASE_URL ?? "",
+      oAuthServerUrl: process.env.OAUTH_SERVER_URL ?? "",
+      ownerOpenId: process.env.OWNER_OPEN_ID ?? "",
+      isProduction: process.env.NODE_ENV === "production",
+      forgeApiUrl: process.env.BUILT_IN_FORGE_API_URL ?? "",
+      forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
+      brevoApiKey: process.env.BREVO_API_KEY ?? "",
+      manychatApiToken: process.env.MANYCHAT_API_TOKEN ?? ""
+    };
+  }
+});
+
 // api/index.ts
 import express from "express";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
@@ -33,22 +67,8 @@ import { addHours } from "date-fns";
 import { z } from "zod";
 
 // server/_core/notification.ts
+init_env();
 import { TRPCError } from "@trpc/server";
-
-// server/_core/env.ts
-var ENV = {
-  appId: process.env.VITE_APP_ID ?? "",
-  cookieSecret: process.env.JWT_SECRET ?? "",
-  databaseUrl: process.env.DATABASE_URL ?? "",
-  oAuthServerUrl: process.env.OAUTH_SERVER_URL ?? "",
-  ownerOpenId: process.env.OWNER_OPEN_ID ?? "",
-  isProduction: process.env.NODE_ENV === "production",
-  forgeApiUrl: process.env.BUILT_IN_FORGE_API_URL ?? "",
-  forgeApiKey: process.env.BUILT_IN_FORGE_API_KEY ?? "",
-  brevoApiKey: process.env.BREVO_API_KEY ?? ""
-};
-
-// server/_core/notification.ts
 var TITLE_MAX_LENGTH = 1200;
 var CONTENT_MAX_LENGTH = 2e4;
 var trimValue = (value) => value.trim();
@@ -184,6 +204,63 @@ var systemRouter = router({
     return {
       success: delivered
     };
+  }),
+  brevoStatus: publicProcedure.query(async () => {
+    const { ENV: ENV2 } = await Promise.resolve().then(() => (init_env(), env_exports));
+    const hasKey = !!ENV2.brevoApiKey;
+    let apiWorks = false;
+    let error = null;
+    if (hasKey) {
+      try {
+        const res = await fetch("https://api.brevo.com/v3/account", {
+          headers: { "api-key": ENV2.brevoApiKey }
+        });
+        if (res.ok) {
+          apiWorks = true;
+        } else {
+          error = `Status: ${res.status} - ${await res.text()}`;
+        }
+      } catch (e) {
+        error = e.message;
+      }
+    }
+    return { apiWorks, error };
+  }),
+  verifySubscriber: publicProcedure.input(z.object({
+    email: z.string().optional(),
+    phone: z.string().optional()
+  })).mutation(async ({ input }) => {
+    const { ENV: ENV2 } = await Promise.resolve().then(() => (init_env(), env_exports));
+    if (!ENV2.manychatApiToken) return { error: "No Token" };
+    const results = {};
+    if (input.email) {
+      try {
+        const res = await fetch(`https://api.manychat.com/fb/subscriber/findByInfo?email=${encodeURIComponent(input.email)}`, {
+          headers: { "Authorization": `Bearer ${ENV2.manychatApiToken}` }
+        });
+        results.emailSearch = { status: res.status, data: await res.json() };
+      } catch (e) {
+        results.emailError = e.message;
+      }
+    }
+    if (input.phone) {
+      try {
+        const res1 = await fetch(`https://api.manychat.com/fb/subscriber/findByInfo?phone=${encodeURIComponent(input.phone)}`, {
+          headers: { "Authorization": `Bearer ${ENV2.manychatApiToken}` }
+        });
+        results.phoneSearchRaw = { status: res1.status, data: await res1.json() };
+        let formatted = input.phone.replace(/\D/g, "");
+        if (!formatted.startsWith("+")) formatted = "+" + formatted;
+        if (!formatted.startsWith("+55") && formatted.length < 13) formatted = "+55" + formatted.replace("+", "");
+        const res2 = await fetch(`https://api.manychat.com/fb/subscriber/findByInfo?phone=${encodeURIComponent(formatted)}`, {
+          headers: { "Authorization": `Bearer ${ENV2.manychatApiToken}` }
+        });
+        results.phoneSearchFormatted = { tested: formatted, status: res2.status, data: await res2.json() };
+      } catch (e) {
+        results.phoneError = e.message;
+      }
+    }
+    return results;
   })
 });
 
@@ -255,6 +332,7 @@ var auditLog = pgTable("audit_log", {
 });
 
 // server/db.ts
+init_env();
 var { Pool } = pg;
 var _db = null;
 async function getDb() {
@@ -531,44 +609,202 @@ async function getSalesStats(startDate, endDate) {
 import { v4 as uuidv4 } from "uuid";
 
 // server/services/brevo.ts
-import * as Brevo from "@getbrevo/brevo";
-var apiInstance = null;
-function getApiInstance() {
-  if (!apiInstance) {
-    if (!ENV.brevoApiKey) {
-      console.warn("[Brevo] API Key not found. Brevo integration disabled.");
-      return null;
-    }
-    const defaultClient = Brevo.ApiClient.instance;
-    const apiKey = defaultClient.authentications["api-key"];
-    apiKey.apiKey = ENV.brevoApiKey;
-    apiInstance = new Brevo.ContactsApi();
-  }
-  return apiInstance;
-}
+init_env();
 async function createBrevoContact(name, email, phone) {
-  const api = getApiInstance();
-  if (!api) return;
-  const createContact = new Brevo.CreateContact();
+  if (!ENV.brevoApiKey) {
+    console.warn("[Brevo] API Key not found. Sync disabled.");
+    return;
+  }
   const [firstName, ...rest] = name.split(" ");
   const lastName = rest.length > 0 ? rest.join(" ") : "";
-  createContact.email = email;
-  createContact.attributes = {
-    NOME: name,
-    // Custom attribute if you have one, or map to FIRSTNAME/LASTNAME
-    FIRSTNAME: firstName,
-    LASTNAME: lastName,
-    SMS: phone
-    // Ensure phone is in E.164 format roughly
+  const payload = {
+    email,
+    attributes: {
+      NOME: name,
+      FIRSTNAME: firstName,
+      LASTNAME: lastName
+    },
+    listIds: [13],
+    updateEnabled: true
   };
-  createContact.listIds = [2];
-  createContact.updateEnabled = true;
+  if (phone) {
+    const hasPlus = phone.trim().startsWith("+");
+    let cleanPhone = phone.replace(/\D/g, "");
+    if (cleanPhone.length > 5) {
+      if (hasPlus) {
+        payload.attributes.SMS = "+" + cleanPhone;
+      } else {
+        if (cleanPhone.length >= 10 && cleanPhone.length <= 11) {
+          cleanPhone = "55" + cleanPhone;
+        }
+        payload.attributes.SMS = "+" + cleanPhone;
+      }
+    }
+  }
   try {
-    const data = await api.createContact(createContact);
-    console.log("[Brevo] Contact created/updated successfully:", data.body);
-    return data.body;
+    const response = await fetch("https://api.brevo.com/v3/contacts", {
+      method: "POST",
+      headers: {
+        "accept": "application/json",
+        "api-key": ENV.brevoApiKey,
+        "content-type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+    if (!response.ok) {
+      console.error(`[Brevo] API Error (${response.status})`);
+    } else {
+      return await response.json();
+    }
   } catch (error) {
-    console.error("[Brevo] Failed to create contact:", error.body || error.message);
+    console.error("[Brevo] Sync failed:", error.message);
+  }
+}
+
+// server/services/manychat.ts
+init_env();
+async function createManyChatSubscriber(name, email, phone) {
+  if (!ENV.manychatApiToken) {
+    console.warn("[ManyChat] API Token not found. Sync disabled.");
+    return;
+  }
+  const [firstName, ...rest] = name.split(" ");
+  const lastName = rest.length > 0 ? rest.join(" ") : "";
+  const payload = {
+    first_name: firstName,
+    last_name: lastName,
+    email,
+    has_opt_in_sms: true,
+    has_opt_in_email: true
+  };
+  if (phone) {
+    const hasPlus = phone.trim().startsWith("+");
+    let cleanPhone = phone.replace(/\D/g, "");
+    if (cleanPhone.length > 5) {
+      if (hasPlus) {
+        payload.phone = "+" + cleanPhone;
+      } else {
+        if (cleanPhone.length >= 10 && cleanPhone.length <= 11) {
+          cleanPhone = "55" + cleanPhone;
+        }
+        payload.phone = "+" + cleanPhone;
+      }
+    }
+  }
+  try {
+    let subscriberId = null;
+    const response = await fetch("https://api.manychat.com/fb/subscriber/createSubscriber", {
+      method: "POST",
+      headers: {
+        "accept": "application/json",
+        "Authorization": `Bearer ${ENV.manychatApiToken}`,
+        "content-type": "application/json"
+      },
+      body: JSON.stringify(payload)
+    });
+    if (response.ok) {
+      const data = await response.json();
+      if (data.status === "success" && data.data?.id) {
+        subscriberId = data.data.id;
+      }
+    } else {
+      console.warn(`[ManyChat] Creation failed (likely exists), trying to find user... Status: ${response.status}`);
+      if (email) {
+        const findRes = await fetch(`https://api.manychat.com/fb/subscriber/findByInfo?email=${encodeURIComponent(email)}`, {
+          method: "GET",
+          headers: {
+            "accept": "application/json",
+            "Authorization": `Bearer ${ENV.manychatApiToken}`
+          }
+        });
+        if (findRes.ok) {
+          const findData = await findRes.json();
+          if (findData.status === "success" && findData.data?.id) {
+            subscriberId = findData.data.id;
+            console.log(`[ManyChat] Found existing subscriber by email: ${subscriberId}`);
+          }
+        }
+      }
+      if (!subscriberId && payload.phone) {
+        const findRes = await fetch(`https://api.manychat.com/fb/subscriber/findByInfo?phone=${encodeURIComponent(payload.phone)}`, {
+          method: "GET",
+          headers: {
+            "accept": "application/json",
+            "Authorization": `Bearer ${ENV.manychatApiToken}`
+          }
+        });
+        if (findRes.ok) {
+          const findData = await findRes.json();
+          if (findData.status === "success" && findData.data?.id) {
+            subscriberId = findData.data.id;
+            console.log(`[ManyChat] Found existing subscriber by phone: ${subscriberId}`);
+          }
+        }
+      }
+    }
+    if (subscriberId) {
+      try {
+        console.log("[ManyChat] Ensuring tag 'Passante Reserva' exists...");
+        const tagsResponse = await fetch("https://api.manychat.com/fb/page/getTags", {
+          method: "GET",
+          headers: {
+            "accept": "application/json",
+            "Authorization": `Bearer ${ENV.manychatApiToken}`
+          }
+        });
+        let tagId = null;
+        if (tagsResponse.ok) {
+          const tagsData = await tagsResponse.json();
+          if (tagsData.data && Array.isArray(tagsData.data)) {
+            const existingTag = tagsData.data.find((t2) => t2.name.toLowerCase() === "passante reserva");
+            if (existingTag) {
+              tagId = existingTag.id;
+            }
+          }
+        }
+        if (!tagId) {
+          console.log("[ManyChat] Tag not found, creating 'Passante Reserva'...");
+          const createTagRes = await fetch("https://api.manychat.com/fb/page/createTag", {
+            method: "POST",
+            headers: {
+              "accept": "application/json",
+              "Authorization": `Bearer ${ENV.manychatApiToken}`,
+              "content-type": "application/json"
+            },
+            body: JSON.stringify({ name: "Passante Reserva" })
+          });
+          if (createTagRes.ok) {
+            const createData = await createTagRes.json();
+            if (createData.data?.id) {
+              tagId = createData.data.id;
+            }
+          }
+        }
+        if (tagId) {
+          console.log(`[ManyChat] Adding tag ID ${tagId} to subscriber ${subscriberId}...`);
+          await fetch("https://api.manychat.com/fb/subscriber/addTag", {
+            method: "POST",
+            headers: {
+              "accept": "application/json",
+              "Authorization": `Bearer ${ENV.manychatApiToken}`,
+              "content-type": "application/json"
+            },
+            body: JSON.stringify({
+              subscriber_id: subscriberId,
+              tag_id: tagId
+            })
+          });
+        } else {
+          console.error("[ManyChat] Could not resolve Tag ID for 'Passante Reserva'");
+        }
+      } catch (tagError) {
+        console.error("[ManyChat] Failed to process tag:", tagError.message);
+      }
+    } else {
+      console.error("[ManyChat] Could not create OR find subscriber. Data sync failed.");
+    }
+  } catch (error) {
+    console.error("[ManyChat] Sync failed:", error.message);
   }
 }
 
@@ -727,8 +963,17 @@ var appRouter = router({
         ticketType: ticketType.name,
         price: ticketType.price / 100
       });
-      if (input.customerEmail && input.customerPhone) {
-        createBrevoContact(input.customerName, input.customerEmail, input.customerPhone).catch((err) => console.error("Brevo sync failed:", err));
+      if (input.customerEmail) {
+        try {
+          await createBrevoContact(input.customerName, input.customerEmail, input.customerPhone);
+        } catch (err) {
+          console.error("Brevo sync failed:", err);
+        }
+        try {
+          await createManyChatSubscriber(input.customerName, input.customerEmail, input.customerPhone);
+        } catch (err) {
+          console.error("ManyChat sync failed:", err);
+        }
       }
       return {
         id: ticketId,
@@ -881,6 +1126,7 @@ var ForbiddenError = (msg) => new HttpError(403, msg);
 import axios from "axios";
 import { parse as parseCookieHeader } from "cookie";
 import { SignJWT, jwtVerify } from "jose";
+init_env();
 var isNonEmptyString2 = (value) => typeof value === "string" && value.length > 0;
 var EXCHANGE_TOKEN_PATH = `/webdev.v1.WebDevAuthPublicService/ExchangeToken`;
 var GET_USER_INFO_PATH = `/webdev.v1.WebDevAuthPublicService/GetUserInfo`;
