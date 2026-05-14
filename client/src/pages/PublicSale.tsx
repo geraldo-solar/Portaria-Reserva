@@ -262,7 +262,7 @@ export default function PublicSale() {
               </div>
               <div className="text-left flex-1">
                 <p className="font-bold text-base">Cartão de Crédito</p>
-                <p className="text-xs text-emerald-200">Visa, Master, Elo, Hipercard • Até 12x</p>
+                <p className="text-xs text-emerald-200">Visa, Master, Elo, Hipercard</p>
               </div>
               <ChevronRight size={20} className="text-white/50 group-hover:text-white transition-colors" />
             </button>
@@ -385,20 +385,7 @@ export default function PublicSale() {
                     />
                   </div>
 
-                  {method === "credito" && (
-                    <select
-                      value={installments}
-                      onChange={(e) => setInstallments(parseInt(e.target.value))}
-                      className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all"
-                    >
-                      {Array.from({ length: 12 }, (_, i) => i + 1).map((n) => (
-                        <option key={n} value={n}>
-                          {n}x {n === 1 ? "sem juros" : ""}
-                          {ticketType ? ` — R$ ${(ticketType.price / n).toFixed(2).replace(".", ",")}` : ""}
-                        </option>
-                      ))}
-                    </select>
-                  )}
+
                 </div>
               )}
 
