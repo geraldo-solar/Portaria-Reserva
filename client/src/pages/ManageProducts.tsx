@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Plus, Trash2, AlertCircle, CheckCircle, QrCode, X } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, AlertCircle, CheckCircle, QrCode, X, Pencil, Check } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import QRCode from "react-qr-code";
 import {
@@ -83,6 +83,7 @@ export default function ManageProducts() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<{ id: number; name: string } | null>(null);
   const [saleQrProduct, setSaleQrProduct] = useState<{ id: number; name: string; price: number } | null>(null);
+  const [editingProduct, setEditingProduct] = useState<{ id: number; name: string; price: string } | null>(null);
 
   const utils = trpc.useUtils();
   const ticketTypesQuery = trpc.ticketTypes.list.useQuery();
@@ -97,6 +98,12 @@ export default function ManageProducts() {
       utils.ticketTypes.list.invalidate();
       setDeleteDialogOpen(false);
       setProductToDelete(null);
+    },
+  });
+  const updateTicketTypeMutation = trpc.ticketTypes.update.useMutation({
+    onSuccess: () => {
+      utils.ticketTypes.list.invalidate();
+      setEditingProduct(null);
     },
   });
 
@@ -311,36 +318,117 @@ export default function ManageProducts() {
                     </tr>
                   </thead>
                   <tbody>
-                    {ticketTypesQuery.data.map((product) => (
-                      <tr key={product.id} className="border-b border-gray-100 hover:bg-gray-50">
-                        <td className="px-4 py-2 text-gray-900 font-medium">{product.name}</td>
-                        <td className="px-4 py-2 text-gray-600 text-xs">{product.description || "-"}</td>
-                        <td className="px-4 py-2 text-gray-900 font-semibold">
-                          R$ {product.price.toFixed(2)}
-                        </td>
-                        <td className="px-4 py-2 flex items-center gap-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 flex items-center gap-1"
-                            onClick={() => setSaleQrProduct({ id: product.id, name: product.name, price: product.price })}
-                            title="Gerar QR Code de Venda"
-                          >
-                            <QrCode size={16} />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                            onClick={() => handleDeleteClick({ id: product.id, name: product.name })}
-                            disabled={deleteTicketTypeMutation.isPending}
-                          >
-                            <Trash2 size={16} />
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
+                    {ticketTypesQuery.data.map((product) => {
+                      const isEditing = editingProduct?.id === product.id;
+                      return (
+                        <tr key={product.id} className="border-b border-gray-100 hover:bg-gray-50">
+                          {/* Nome */}
+                          <td className="px-4 py-2">
+                            {isEditing ? (
+                              <input
+                                className="border border-emerald-300 rounded-lg px-2 py-1 text-sm w-full focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                value={editingProduct.name}
+                                onChange={(e) => setEditingProduct({ ...editingProduct, name: e.target.value })}
+                              />
+                            ) : (
+                              <span className="text-gray-900 font-medium">{product.name}</span>
+                            )}
+                          </td>
+
+                          {/* Descrição */}
+                          <td className="px-4 py-2 text-gray-600 text-xs">{product.description || "-"}</td>
+
+                          {/* Preço */}
+                          <td className="px-4 py-2">
+                            {isEditing ? (
+                              <div className="flex items-center gap-1">
+                                <span className="text-sm text-gray-500">R$</span>
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                  className="border border-emerald-300 rounded-lg px-2 py-1 text-sm w-24 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                                  value={editingProduct.price}
+                                  onChange={(e) => setEditingProduct({ ...editingProduct, price: e.target.value })}
+                                />
+                              </div>
+                            ) : (
+                              <span className="text-gray-900 font-semibold">R$ {product.price.toFixed(2)}</span>
+                            )}
+                          </td>
+
+                          {/* Ações */}
+                          <td className="px-4 py-2">
+                            <div className="flex items-center gap-1">
+                              {isEditing ? (
+                                <>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                                    disabled={updateTicketTypeMutation.isPending}
+                                    onClick={() => {
+                                      const price = parseFloat(editingProduct.price.replace(",", "."));
+                                      if (isNaN(price) || price < 0) return;
+                                      updateTicketTypeMutation.mutate({
+                                        id: editingProduct.id,
+                                        name: editingProduct.name,
+                                        price,
+                                      });
+                                    }}
+                                    title="Salvar"
+                                  >
+                                    <Check size={16} />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="text-gray-500 hover:text-gray-700"
+                                    onClick={() => setEditingProduct(null)}
+                                    title="Cancelar"
+                                  >
+                                    <X size={16} />
+                                  </Button>
+                                </>
+                              ) : (
+                                <>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="text-blue-500 hover:text-blue-700 hover:bg-blue-50"
+                                    onClick={() => setEditingProduct({ id: product.id, name: product.name, price: product.price.toFixed(2) })}
+                                    title="Editar preço"
+                                  >
+                                    <Pencil size={15} />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"
+                                    onClick={() => setSaleQrProduct({ id: product.id, name: product.name, price: product.price })}
+                                    title="QR Code de Venda"
+                                  >
+                                    <QrCode size={16} />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                    onClick={() => handleDeleteClick({ id: product.id, name: product.name })}
+                                    disabled={deleteTicketTypeMutation.isPending}
+                                    title="Excluir"
+                                  >
+                                    <Trash2 size={16} />
+                                  </Button>
+                                </>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
+
                 </table>
               </div>
             ) : (

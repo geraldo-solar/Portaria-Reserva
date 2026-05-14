@@ -378,7 +378,31 @@ export const appRouter = router({
 
         return { success: true };
       }),
+
+    update: publicProcedure
+      .input(
+        z.object({
+          id: z.number().int().positive(),
+          name: z.string().min(1).optional(),
+          description: z.string().optional(),
+          price: z.number().min(0).optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("Database not available");
+
+        const updates: any = {};
+        if (input.name !== undefined) updates.name = input.name;
+        if (input.description !== undefined) updates.description = input.description;
+        if (input.price !== undefined) updates.price = Math.round(input.price * 100); // converte para centavos
+
+        // @ts-ignore
+        await db.update(ticketTypes).set(updates).where(eq(ticketTypes.id, input.id));
+        return { success: true };
+      }),
   }),
+
 
   reports: router({
     sales: publicProcedure
