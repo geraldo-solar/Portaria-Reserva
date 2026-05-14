@@ -7,8 +7,9 @@ import { integer, pgEnum, pgTable, text, timestamp, varchar } from "drizzle-orm/
 
 // Enums
 export const roleEnum = pgEnum("role", ["user", "admin"]);
-export const paymentMethodEnum = pgEnum("payment_method", ["dinheiro", "pix", "cartao"]);
+export const paymentMethodEnum = pgEnum("payment_method", ["dinheiro", "pix", "cartao", "pix_online", "credito", "debito"]);
 export const statusEnum = pgEnum("status", ["active", "cancelled", "used"]);
+export const paymentStatusEnum = pgEnum("payment_status", ["pending", "approved", "rejected", "cancelled"]);
 
 /**
  * Core user table backing auth flow.
@@ -72,6 +73,15 @@ export const tickets = pgTable("tickets", {
     usedAt: timestamp("used_at"),
     qrToken: varchar("qr_token", { length: 255 }).unique(),
     validUntil: timestamp("valid_until"),
+    // Campos para pagamento online via Cielo
+    cieloPaymentId: varchar("cielo_payment_id", { length: 100 }),  // PaymentId da Cielo
+    pixQrCode: text("pix_qr_code"),                                // QR Code PIX (base64)
+    pixQrCodeText: text("pix_qr_code_text"),                       // PIX Copia e Cola
+    pixExpiresAt: timestamp("pix_expires_at"),                     // Validade do PIX
+    paymentStatus: paymentStatusEnum("payment_status"),            // Status do pagamento online
+    isOnlineSale: integer("is_online_sale").default(0).notNull(),  // 1 = venda online
+    cieloReturnCode: varchar("cielo_return_code", { length: 10 }), // Código de retorno Cielo
+    cieloReturnMessage: text("cielo_return_message"),              // Mensagem de retorno Cielo
     createdAt: timestamp("created_at").defaultNow().notNull(),
     updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

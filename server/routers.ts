@@ -19,12 +19,24 @@ import {
   getSalesStats,
   getTicketByQr,
   createTicketType,
+  createPendingOnlineTicket,
+  approveOnlineTicket,
+  rejectOnlineTicket,
+  getTicketByMpPaymentId,
 } from "./db";
 import { v4 as uuidv4 } from "uuid";
 import { getDb } from "./db";
 import { ticketTypes } from "../drizzle/schema";
 import { createBrevoContact } from "./services/brevo";
 import { createManyChatSubscriber } from "./services/manychat";
+import {
+  createCieloPixPayment,
+  createCieloCreditPayment,
+  createCieloDebitPayment,
+  getCieloPaymentStatus,
+  isCieloConfigured,
+} from "./services/cielo";
+
 
 export const appRouter = router({
   system: systemRouter,
@@ -411,6 +423,335 @@ export const appRouter = router({
             },
           },
         };
+      }),
+  }),
+
+  // ─── Rota pública: venda online via Cielo (PIX | Crédito | Débito) ────────
+  payments: router({
+    /**
+     * Passo 1 — PIX: cria cobrança e retorna QR Code para o cliente escanear
+     */
+    initiatePix: publicProcedure
+      .input(
+        z.object({
+          ticketTypeId: z.number().int().positive(),
+          customerName: z.string().min(2),
+          customerEmail: z.string().email(),
+          customerPhone: z.string().optional(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const allTypes = await listTicketTypes() as any[];
+        const ticketType = allTypes.find((t) => t.id === input.ticketTypeId);
+        if (!ticketType) throw new Error("Tipo de ingresso não encontrado");
+
+        const customerResult = await createCustomer({
+          name: input.customerName,
+          email: input.customerEmail,
+          phone: input.customerPhone || null,
+        });
+        const customerId = customerResult[0]?.id;
+        if (!customerId) throw new Error("Erro ao cadastrar cliente");
+
+        const priceInReais = ticketType.price / 100;
+        const qrToken = uuidv4();
+
+        // Modo sandbox (sem credenciais Cielo)
+        if (!isCieloConfigured()) {
+          const fakeId = `SANDBOX_${Date.now()}`;
+          await createPendingOnlineTicket({
+            customerId,
+            ticketTypeId: input.ticketTypeId,
+            price: ticketType.price,
+            qrToken,
+            cieloPaymentId: fakeId,
+            paymentMethod: "pix_online",
+            pixQrCode: null,
+            pixQrCodeText: `00020126580014BR.GOV.BCB.PIX0136${qrToken.substring(0,36)}5204000053039865802BR5913ReservaSolar6008Salinas62070503***6304ABCD`,
+            pixExpiresAt: new Date(Date.now() + 30 * 60 * 1000),
+          });
+          return {
+            cieloPaymentId: fakeId,
+            pixQrCode: null,
+            pixQrCodeText: `00020126580014BR.GOV.BCB.PIX0136${qrToken.substring(0,36)}5204000053039865802BR5913ReservaSolar6008Salinas62070503***6304ABCD`,
+            expiresAt: new Date(Date.now() + 30 * 60 * 1000),
+            priceInReais,
+            ticketTypeName: ticketType.name,
+            isSandbox: true,
+          };
+        }
+
+        const pixPayment = await createCieloPixPayment({
+          amount: priceInReais,
+          customerName: input.customerName,
+          orderId: qrToken,
+        });
+
+        await createPendingOnlineTicket({
+          customerId,
+          ticketTypeId: input.ticketTypeId,
+          price: ticketType.price,
+          qrToken,
+          cieloPaymentId: pixPayment.cieloPaymentId,
+          paymentMethod: "pix_online",
+          pixQrCode: pixPayment.pixQrCodeBase64,
+          pixQrCodeText: pixPayment.pixQrCodeText,
+          pixExpiresAt: pixPayment.expiresAt,
+        });
+
+        return {
+          cieloPaymentId: pixPayment.cieloPaymentId,
+          pixQrCode: pixPayment.pixQrCodeBase64,
+          pixQrCodeText: pixPayment.pixQrCodeText,
+          expiresAt: pixPayment.expiresAt,
+          priceInReais,
+          ticketTypeName: ticketType.name,
+          isSandbox: false,
+        };
+      }),
+
+    /**
+     * Passo 1 — Cartão de Crédito: submete dados do cartão, retorna resultado imediato
+     */
+    payCredit: publicProcedure
+      .input(
+        z.object({
+          ticketTypeId: z.number().int().positive(),
+          customerName: z.string().min(2),
+          customerEmail: z.string().email(),
+          customerPhone: z.string().optional(),
+          cardNumber: z.string().min(13),
+          holderName: z.string().min(2),
+          expirationDate: z.string().regex(/^\d{2}\/\d{4}$/, "Formato: MM/AAAA"),
+          securityCode: z.string().min(3).max(4),
+          brand: z.string(),
+          installments: z.number().min(1).max(12).default(1),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const allTypes = await listTicketTypes() as any[];
+        const ticketType = allTypes.find((t) => t.id === input.ticketTypeId);
+        if (!ticketType) throw new Error("Tipo de ingresso não encontrado");
+
+        const customerResult = await createCustomer({
+          name: input.customerName,
+          email: input.customerEmail,
+          phone: input.customerPhone || null,
+        });
+        const customerId = customerResult[0]?.id;
+        if (!customerId) throw new Error("Erro ao cadastrar cliente");
+
+        const priceInReais = ticketType.price / 100;
+        const qrToken = uuidv4();
+
+        // Modo sandbox
+        if (!isCieloConfigured()) {
+          const fakeId = `SANDBOX_CC_${Date.now()}`;
+          await createPendingOnlineTicket({
+            customerId,
+            ticketTypeId: input.ticketTypeId,
+            price: ticketType.price,
+            qrToken,
+            cieloPaymentId: fakeId,
+            paymentMethod: "credito",
+            approvedImmediately: true,
+          });
+          return {
+            status: "approved" as const,
+            qrToken,
+            cieloPaymentId: fakeId,
+            message: "Pagamento aprovado (sandbox)",
+            isSandbox: true,
+          };
+        }
+
+        const result = await createCieloCreditPayment({
+          amount: priceInReais,
+          customerName: input.customerName,
+          customerEmail: input.customerEmail,
+          orderId: qrToken,
+          card: {
+            cardNumber: input.cardNumber,
+            holderName: input.holderName,
+            expirationDate: input.expirationDate,
+            securityCode: input.securityCode,
+            brand: input.brand,
+            installments: input.installments,
+          },
+        });
+
+        const approved = result.status === "approved";
+
+        await createPendingOnlineTicket({
+          customerId,
+          ticketTypeId: input.ticketTypeId,
+          price: ticketType.price,
+          qrToken,
+          cieloPaymentId: result.cieloPaymentId,
+          paymentMethod: "credito",
+          approvedImmediately: approved,
+        });
+
+        if (!approved) {
+          throw new Error(result.returnMessage || "Pagamento não autorizado. Verifique os dados do cartão.");
+        }
+
+        return {
+          status: "approved" as const,
+          qrToken,
+          cieloPaymentId: result.cieloPaymentId,
+          message: "Pagamento aprovado",
+          isSandbox: false,
+        };
+      }),
+
+    /**
+     * Passo 1 — Cartão de Débito: retorna URL de autenticação 3DS para redirecionar o cliente
+     */
+    payDebit: publicProcedure
+      .input(
+        z.object({
+          ticketTypeId: z.number().int().positive(),
+          customerName: z.string().min(2),
+          customerEmail: z.string().email(),
+          customerPhone: z.string().optional(),
+          cardNumber: z.string().min(13),
+          holderName: z.string().min(2),
+          expirationDate: z.string().regex(/^\d{2}\/\d{4}$/, "Formato: MM/AAAA"),
+          securityCode: z.string().min(3).max(4),
+          brand: z.string(),
+          returnUrl: z.string().url(),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const allTypes = await listTicketTypes() as any[];
+        const ticketType = allTypes.find((t) => t.id === input.ticketTypeId);
+        if (!ticketType) throw new Error("Tipo de ingresso não encontrado");
+
+        const customerResult = await createCustomer({
+          name: input.customerName,
+          email: input.customerEmail,
+          phone: input.customerPhone || null,
+        });
+        const customerId = customerResult[0]?.id;
+        if (!customerId) throw new Error("Erro ao cadastrar cliente");
+
+        const priceInReais = ticketType.price / 100;
+        const qrToken = uuidv4();
+
+        // Modo sandbox
+        if (!isCieloConfigured()) {
+          const fakeId = `SANDBOX_DB_${Date.now()}`;
+          await createPendingOnlineTicket({
+            customerId,
+            ticketTypeId: input.ticketTypeId,
+            price: ticketType.price,
+            qrToken,
+            cieloPaymentId: fakeId,
+            paymentMethod: "debito",
+            approvedImmediately: true,
+          });
+          return {
+            authenticationUrl: null,
+            qrToken,
+            cieloPaymentId: fakeId,
+            isSandbox: true,
+          };
+        }
+
+        const result = await createCieloDebitPayment({
+          amount: priceInReais,
+          customerName: input.customerName,
+          customerEmail: input.customerEmail,
+          orderId: qrToken,
+          returnUrl: input.returnUrl,
+          card: {
+            cardNumber: input.cardNumber,
+            holderName: input.holderName,
+            expirationDate: input.expirationDate,
+            securityCode: input.securityCode,
+            brand: input.brand,
+          },
+        });
+
+        await createPendingOnlineTicket({
+          customerId,
+          ticketTypeId: input.ticketTypeId,
+          price: ticketType.price,
+          qrToken,
+          cieloPaymentId: result.cieloPaymentId,
+          paymentMethod: "debito",
+        });
+
+        return {
+          authenticationUrl: result.authenticationUrl,
+          qrToken,
+          cieloPaymentId: result.cieloPaymentId,
+          isSandbox: false,
+        };
+      }),
+
+    /**
+     * Polling de status — PIX e Débito (crédito é síncrono, não precisa)
+     */
+    checkStatus: publicProcedure
+      .input(z.object({ cieloPaymentId: z.string() }))
+      .query(async ({ input }) => {
+        const ticket = await getTicketByMpPaymentId(input.cieloPaymentId);
+        if (!ticket) return { status: "not_found" as const };
+
+        if (ticket.paymentStatus === "approved") {
+          return { status: "approved" as const, qrToken: ticket.qrToken };
+        }
+
+        // Consulta Cielo se configurado e não for sandbox
+        if (isCieloConfigured() && !input.cieloPaymentId.startsWith("SANDBOX_")) {
+          try {
+            const cielo = await getCieloPaymentStatus(input.cieloPaymentId);
+            if (cielo.status === "approved") {
+              await approveOnlineTicket(input.cieloPaymentId);
+              return { status: "approved" as const, qrToken: ticket.qrToken };
+            }
+            if (cielo.status === "rejected" || cielo.status === "cancelled") {
+              await rejectOnlineTicket(input.cieloPaymentId);
+              return { status: "rejected" as const };
+            }
+          } catch (err) {
+            console.error("[Cielo] Erro ao checar status:", err);
+          }
+        }
+
+        // Sandbox: auto-aprova após 5s para demonstração
+        if (input.cieloPaymentId.startsWith("SANDBOX_")) {
+          await approveOnlineTicket(input.cieloPaymentId);
+          return { status: "approved" as const, qrToken: ticket.qrToken };
+        }
+
+        return { status: ticket.paymentStatus as string };
+      }),
+
+    /**
+     * Webhook da Cielo (notificação automática de mudança de status)
+     */
+    webhook: publicProcedure
+      .input(z.object({
+        PaymentId: z.string().optional(),
+        ChangeType: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        if (input.PaymentId) {
+          try {
+            const cielo = await getCieloPaymentStatus(input.PaymentId);
+            if (cielo.status === "approved") {
+              await approveOnlineTicket(input.PaymentId);
+            } else if (cielo.status === "rejected" || cielo.status === "cancelled") {
+              await rejectOnlineTicket(input.PaymentId);
+            }
+          } catch (err) {
+            console.error("[Cielo Webhook] Erro:", err);
+          }
+        }
+        return { received: true };
       }),
   }),
 });

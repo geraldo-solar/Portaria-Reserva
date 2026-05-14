@@ -3,8 +3,9 @@ import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Plus, Trash2, AlertCircle, CheckCircle } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, AlertCircle, CheckCircle, QrCode, X } from "lucide-react";
 import { trpc } from "@/lib/trpc";
+import QRCode from "react-qr-code";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,6 +16,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 
 
@@ -80,6 +82,7 @@ export default function ManageProducts() {
   const [success, setSuccess] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<{ id: number; name: string } | null>(null);
+  const [saleQrProduct, setSaleQrProduct] = useState<{ id: number; name: string; price: number } | null>(null);
 
   const utils = trpc.useUtils();
   const ticketTypesQuery = trpc.ticketTypes.list.useQuery();
@@ -315,7 +318,16 @@ export default function ManageProducts() {
                         <td className="px-4 py-2 text-gray-900 font-semibold">
                           R$ {product.price.toFixed(2)}
                         </td>
-                        <td className="px-4 py-2">
+                        <td className="px-4 py-2 flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 flex items-center gap-1"
+                            onClick={() => setSaleQrProduct({ id: product.id, name: product.name, price: product.price })}
+                            title="Gerar QR Code de Venda"
+                          >
+                            <QrCode size={16} />
+                          </Button>
                           <Button
                             variant="ghost"
                             size="sm"
@@ -340,6 +352,42 @@ export default function ManageProducts() {
         </Card>
       </main>
 
+      {/* Modal: QR Code de Venda Online */}
+      <Dialog open={!!saleQrProduct} onOpenChange={(open) => !open && setSaleQrProduct(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between">
+              <span>QR Code de Venda</span>
+              <Button variant="ghost" size="sm" onClick={() => setSaleQrProduct(null)}><X size={16} /></Button>
+            </DialogTitle>
+          </DialogHeader>
+          {saleQrProduct && (
+            <div className="flex flex-col items-center gap-4 py-2">
+              <div className="text-center">
+                <p className="font-bold text-lg text-emerald-900">{saleQrProduct.name}</p>
+                <p className="text-2xl font-bold text-emerald-700">R$ {saleQrProduct.price.toFixed(2)}</p>
+                <p className="text-xs text-gray-500 mt-1">O cliente escaneia para comprar online</p>
+              </div>
+              <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-inner">
+                <QRCode
+                  value={`${window.location.origin}/comprar/${saleQrProduct.id}`}
+                  size={200}
+                />
+              </div>
+              <div className="w-full bg-gray-50 rounded-xl p-3 text-center">
+                <p className="text-xs text-gray-500 mb-1">Link direto:</p>
+                <code className="text-xs text-emerald-700 break-all">
+                  {window.location.origin}/comprar/{saleQrProduct.id}
+                </code>
+              </div>
+              <p className="text-xs text-center text-gray-400">
+                Imprima ou exiba este QR Code. O cliente escolhe entre PIX, Crédito ou Débito.
+              </p>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* Diálogo de Confirmação de Exclusão */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
@@ -363,3 +411,4 @@ export default function ManageProducts() {
     </div>
   );
 }
+

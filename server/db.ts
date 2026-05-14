@@ -435,4 +435,116 @@ export async function getSalesStats(startDate?: Date, endDate?: Date) {
   }
 }
 
+/**
+ * Criar ingresso PENDENTE para venda online (antes do pagamento)
+ */
+export async function createPendingOnlineTicket(params: {
+  customerId: number;
+  ticketTypeId: number;
+  price: number;
+  qrToken: string;
+  cieloPaymentId: string;
+  paymentMethod: "pix_online" | "credito" | "debito";
+  pixQrCode?: string | null;
+  pixQrCodeText?: string | null;
+  pixExpiresAt?: Date;
+  // Para crédito/débito aprovados de imediato
+  approvedImmediately?: boolean;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
 
+  const isApproved = params.approvedImmediately === true;
+
+  const result = await db.insert(tickets).values({
+    customerId: params.customerId,
+    ticketTypeId: params.ticketTypeId,
+    price: params.price,
+    paymentMethod: params.paymentMethod as any,
+    status: isApproved ? "active" : "cancelled", // cancelado = aguardando pagamento
+    qrToken: params.qrToken,
+    validUntil: new Date(Date.now() + 24 * 60 * 60 * 1000),
+    cieloPaymentId: params.cieloPaymentId,
+    pixQrCode: params.pixQrCode || null,
+    pixQrCodeText: params.pixQrCodeText || null,
+    pixExpiresAt: params.pixExpiresAt || null,
+    paymentStatus: isApproved ? "approved" as any : "pending" as any,
+    isOnlineSale: 1,
+  } as any).returning();
+
+  return result[0];
+}
+
+/**
+ * Ativar ingresso após confirmação do pagamento
+ */
+export async function approveOnlineTicket(cieloPaymentId: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db
+    .update(tickets)
+    .set({
+      status: "active" as any,
+      paymentStatus: "approved" as any,
+    } as any)
+    .where(eq((tickets as any).cieloPaymentId, cieloPaymentId))
+    .returning();
+
+  return result[0];
+}
+
+/**
+ * Rejeitar ingresso de venda online
+ */
+export async function rejectOnlineTicket(cieloPaymentId: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db
+    .update(tickets)
+    .set({
+      paymentStatus: "rejected" as any,
+      cancelledAt: new Date(),
+      cancellationReason: "Pagamento recusado pelo gateway Cielo",
+    } as any)
+    .where(eq((tickets as any).cieloPaymentId, cieloPaymentId));
+}
+
+/**
+ * Buscar ingresso por Cielo PaymentId
+ */
+export async function getTicketByCieloPaymentId(cieloPaymentId: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db
+    .select({
+      id: tickets.id,
+      customerId: tickets.customerId,
+      ticketTypeId: tickets.ticketTypeId,
+      ticketTypeName: ticketTypes.name,
+      price: tickets.price,
+      status: tickets.status,
+      qrToken: tickets.qrToken,
+      validUntil: tickets.validUntil,
+      customerName: customers.name,
+      customerPhone: customers.phone,
+      customerEmail: customers.email,
+      cieloPaymentId: (tickets as any).cieloPaymentId,
+      paymentStatus: (tickets as any).paymentStatus,
+      pixQrCode: (tickets as any).pixQrCode,
+      pixQrCodeText: (tickets as any).pixQrCodeText,
+      pixExpiresAt: (tickets as any).pixExpiresAt,
+    })
+    .from(tickets)
+    .leftJoin(ticketTypes, eq(tickets.ticketTypeId, ticketTypes.id))
+    .leftJoin(customers, eq(tickets.customerId, customers.id))
+    .where(eq((tickets as any).cieloPaymentId, cieloPaymentId))
+    .limit(1);
+
+  return result.length > 0 ? result[0] : null;
+}
+
+// Alias para compatibilidade com routers.ts
+export const getTicketByMpPaymentId = getTicketByCieloPaymentId;

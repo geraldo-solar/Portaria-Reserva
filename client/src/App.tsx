@@ -14,6 +14,7 @@ import Reports from "./pages/Reports";
 import ManageProducts from "./pages/ManageProducts";
 import Scanner from "./pages/Scanner";
 import PublicTicket from "./pages/PublicTicket";
+import PublicSale from "./pages/PublicSale";
 import { useEffect, useState } from "react";
 
 // Auth Context
@@ -116,6 +117,7 @@ function Router() {
       <Route path={"/products"} component={() => <ProtectedRoute component={ManageProducts} />} />
       <Route path={"/scanner"} component={() => <ProtectedRoute component={Scanner} />} />
       <Route path={"/ticket/:token"} component={PublicTicket} />
+      <Route path={"/comprar/:ticketTypeId"} component={PublicSale} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />
